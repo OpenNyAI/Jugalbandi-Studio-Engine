@@ -23,13 +23,15 @@ jobs:
         pip install poetry
     - name: Build package
       run: |
+        cd lib
         poetry install && poetry build
         mv ./dist/*.whl ./dist/pwr-studio.whl
+        cd -
     - name: Upload wheel as artifact
       uses: actions/upload-artifact@v4
       with:
         name: pwr-studio-wheel
-        path: ./dist/pwr-studio.whl
+        path: ./lib/dist/pwr-studio.whl
         retention-days: 3
         overwrite: true
   
@@ -62,6 +64,7 @@ jobs:
         overwrite: true
   build_docker_image:
     runs-on: ubuntu-22.04
+    needs: [build_pwr_studio_wheel, build_pwr_nl2dsl_wheel]
     permissions:
       contents: write
     steps:
