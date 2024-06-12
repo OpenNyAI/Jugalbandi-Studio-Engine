@@ -5,18 +5,85 @@ on:
     types: [published]
 
 jobs:
-  build:
+  build_pwr_studio_wheel:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    steps:     
+    - name: Fetch PwR-Studio
+      uses: actions/checkout@v4
+      with:
+        repository: 'microsoft/PwR-Studio'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Poetry
+      run: |
+        pip install poetry
+    - name: Build package
+      run: |
+        cd lib
+        poetry install && poetry build
+        cd -
+    - name: Upload wheel as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pwr-studio-wheel
+        path: ./lib/dist/*.whl
+        retention-days: 3
+        overwrite: true
+  
+  build_pwr_nl2dsl_wheel:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:     
+    - name: Fetch PwR-NL2DSL
+      uses: actions/checkout@v4
+      with:
+        repository: 'microsoft/PwR-NL2DSL'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Poetry
+      run: |
+        pip install poetry
+    - name: Build package
+      run: |
+        poetry install && poetry build
+    - name: Upload wheel as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nl2dsl-wheel
+        path: ./dist/*.whl
+        retention-days: 3
+        overwrite: true
+  build_docker_image:
+    runs-on: ubuntu-22.04
+    needs: [build_pwr_studio_wheel, build_pwr_nl2dsl_wheel]
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.merge_commit_sha }}
         fetch-depth: '0'
-
+        
+    # download earlier artifacts
+    - name: Download pwr-studio wheel
+      uses: actions/download-artifact@v4
+      with:
+        name: pwr-studio-wheel
+        path: ./dist/
+    - name: Download nl2dsl wheel
+      uses: actions/download-artifact@v4
+      with:
+        name: nl2dsl-wheel
+        path: ./dist/
     - name: Log in to Docker Hub
-      uses: docker/login-action@v1
+      uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
