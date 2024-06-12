@@ -25,13 +25,12 @@ jobs:
       run: |
         cd lib
         poetry install && poetry build
-        mv ./dist/*.whl ./dist/pwr-studio.whl
         cd -
     - name: Upload wheel as artifact
       uses: actions/upload-artifact@v4
       with:
         name: pwr-studio-wheel
-        path: ./lib/dist/pwr-studio.whl
+        path: ./lib/dist/*.whl
         retention-days: 3
         overwrite: true
   
@@ -54,12 +53,11 @@ jobs:
     - name: Build package
       run: |
         poetry install && poetry build
-        mv ./dist/*.whl ./dist/nl2dsl.whl
     - name: Upload wheel as artifact
       uses: actions/upload-artifact@v4
       with:
         name: nl2dsl-wheel
-        path: ./dist/nl2dsl.whl
+        path: ./dist/*.whl
         retention-days: 3
         overwrite: true
   build_docker_image:
