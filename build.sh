@@ -1,12 +1,12 @@
 mkdir -p dist
 
-cd ../NL2DSL-Release && poetry install && poetry build
+cd ../PwR-NL2DSL && poetry install && poetry build
 cd -
-cp ../NL2DSL-Release/dist/*.whl ./dist  
+cp ../PwR-NL2DSL/dist/*.whl ./dist  
 
-cd ../PwR-Studio-Release/lib && poetry install && poetry build
+cd ../PwR-Studio/lib && poetry install && poetry build
 cd -
-cp ../PwR-Studio-Release/lib/dist/*.whl ./dist  
+cp ../PwR-Studio/lib/dist/*.whl ./dist  
 
+echo "Building jbengine:${1}"
 docker build -t jbengine:${1} .
-
