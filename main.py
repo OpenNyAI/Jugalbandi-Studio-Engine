@@ -9,7 +9,6 @@ import multiprocessing
 from base64 import b64decode
 from dotenv import load_dotenv
 from azure.storage.blob import BlobClient
-from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 from app.jb import JBEngine
 from pwr_studio.kafka_utils import KafkaConsumer
@@ -17,9 +16,6 @@ from pwr_studio.types import Action, Response
 # load_dotenv()
 
 logger = logging.getLogger("jbengine")
-# if 'APPINSIGHTS_INSTRUMENTATIONKEY' in os.environ:
-#     logger.addHandler(AzureLogHandler(
-#         connection_string=f'InstrumentationKey={os.environ["APPINSIGHTS_INSTRUMENTATIONKEY"]}'))
 
 async def main(msg: str) -> None:
     print(msg)
