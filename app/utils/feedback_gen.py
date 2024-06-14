@@ -38,4 +38,8 @@ Return at most 3 bullet points with at most 10 words each. Think step by step. B
         ]
     )
 
-    return result
+    if result and len(result) > 0:
+        return f"Here are some next steps that can be tried:\n {result}"
+    else:
+        return "The program has been updated as per instruction"
+
