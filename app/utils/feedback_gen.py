@@ -21,9 +21,9 @@ Here is the plan of how the program should be written with various tasks listed 
 {1}
 {2}
 
-Now think as a developer and list out ideas to improve the program. Restrict to ideas that make the program logically complete or that add the important functionality. 
-Ignore handling corner cases. Ignore validating variables. Fix logical errors if present. If there are no issues, dont report anything. Mention step names that are closely related to the idea.
-Return at most 3 bullet points with at most 10 words each in simple english sentences. Think step by step. Be clear and concise. Dont repeat similar ideas."""
+Now think as a developer and list out ideas to improve the program. Restrict to ideas that make the program logically complete or that add the important functionality.
+Ignore handling corner cases. Ignore validating variables. Fix logical errors if present. If there are no issues, dont report ideas. Mention step names that are closely related to the idea.
+Return at most 3 bullet points. Each bullet point should be in simple english and have at most 10 words. Think step by step. Be clear and concise. Dont repeat similar ideas."""
 
     user_instruction = ""
     for i, inst in enumerate(user_history):
