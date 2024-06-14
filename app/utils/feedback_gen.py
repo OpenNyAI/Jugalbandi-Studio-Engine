@@ -13,13 +13,13 @@ def generate_feedback(user_history, dsl_desc, errors):
         error_string += "Logical errors found in the program plan :"
         for e in errors:
             error_string += f"\n- {e}"
-    
+
     template_str = """You are a developer bot that is developing a program as per the following user instruction : 
 {0}
 
 Here is the plan of how the program should be written with various tasks listed out:
 {1}
-{3}
+{2}
 
 Now think as a developer and list out ideas to improve the program. Restrict to ideas that make the program logically complete or that add the important functionality.
 Ignore handling corner cases. Ignore validating variables. Fix logical errors if present. If there are no issues, dont report anything. 
