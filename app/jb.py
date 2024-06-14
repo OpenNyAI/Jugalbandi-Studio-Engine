@@ -143,7 +143,7 @@ class JBEngine(PwRStudioEngine):
         errors = nl2dsl.validate_dsl()
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
-        feedback = generate_feedback(chat_history_strings, nlr, errors)
+        feedback = generate_feedback(chat_history_strings + [text,], nlr, errors)
 
         # user_output = d.change.llm_review
 
