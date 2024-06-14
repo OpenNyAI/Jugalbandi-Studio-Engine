@@ -2,10 +2,6 @@ from .llm import llm, sm, um
 
 
 def generate_feedback(user_history, dsl_desc, errors, **kwargs):
-    if kwargs.get("debug", False):
-        print("Generating feedback for the user")
-        print("Length of DSL description:", len(dsl_desc))
-        print("Length of User history:", len(user_history))
 
     if not user_history or len(user_history) < 1:
         return ""
@@ -33,8 +29,6 @@ Return at most 3 bullet points. Each bullet point should be in simple english an
     user_instruction = ""
     for i, inst in enumerate(user_history):
         user_instruction += f"{i}: {inst}\n"
-    if kwargs.get("debug", False):
-        print("User instruction:", user_instruction)
     result = llm(
         [
             sm(
@@ -42,11 +36,7 @@ Return at most 3 bullet points. Each bullet point should be in simple english an
             ),
             um(template_str.format(user_instruction, dsl_desc, error_string)),
         ],
-        debug=True,
     )
-
-    if kwargs.get("debug", False):
-        print("Feedback generated:", result)
 
     if result and len(result) > 0:
         return f"Here are some next steps that can be tried:\n {result}"
