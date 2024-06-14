@@ -235,7 +235,7 @@ class CodeGen:
                     }
                 )
                 read_variables = task["read_variables"]
-                state_transitions = task["transitions"]
+                state_transitions = task["conditions"]
                 for idx, transition in enumerate(state_transitions):
                     for variable in read_variables:
                         if variable in transition["condition"]:
@@ -337,7 +337,7 @@ class CodeGen:
                 )
             elif task["task_type"] == "condition":
                 condition_state = task["name"]
-                state_transitions = task["transitions"]
+                state_transitions = task["conditions"]
                 for idx, transition in enumerate(state_transitions):
                     if transition["goto"] is None:
                         transition["goto"] = "end"
