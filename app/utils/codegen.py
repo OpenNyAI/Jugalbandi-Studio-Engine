@@ -12,7 +12,7 @@ import re
 
 
 class CodeGen:
-    
+
     def __init__(self, json_data):
         self.json_data = json_data
 
@@ -36,6 +36,7 @@ class CodeGen:
     def generate_pydantic_class(self, fsm_name, variables):
         var_map = {
             "str": "str",
+            "string": "str",
             "int": "int",
             "float": "float",
             "bool": "bool",
@@ -72,7 +73,7 @@ class CodeGen:
             elif var_type == "str":
                 default = None
             class_def += f"    {name}: Optional[{var_type}] = {default}\n"
-    
+
             # if validation:
             #     class_def += f"    @validator('{name}')\n"
             #     class_def += f"    def validate_{name}(cls, v):\n"
