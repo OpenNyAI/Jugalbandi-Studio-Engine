@@ -25,7 +25,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
-
+from .utils.feedback_gen import generate_feedback
 
 
 def utcnow():
@@ -76,9 +76,9 @@ class JBEngine(PwRStudioEngine):
 
     async def _process_utterance(self, text, **kwargs):
 
-        chat_history = kwargs.get("chat_history", [])
+        chat_history_strings = kwargs.get("chat_history", [])
         chat_history = [Message(type=x.type, content=x.message)
-                        for x in chat_history]
+                        for x in chat_history_strings]
         try:
             dsl = json.loads(self._project.representations['dsl'].text)
         except Exception as e:
@@ -144,11 +144,9 @@ class JBEngine(PwRStudioEngine):
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
-
-
+        feedback = generate_feedback(chat_history_strings, nlr)
 
         # user_output = d.change.llm_review
-        user_output = "A response has been generated."
 
         if nl2dsl.dsl is not None:
             self._project.representations['dsl'].text = json.dumps(nl2dsl.dsl, indent=4)
@@ -175,7 +173,7 @@ class JBEngine(PwRStudioEngine):
         await self._progress(
             Response(
                 type="output",
-                message=f"DSL has been updated successfully! 🎉",
+                message=feedback,
                 project=self._project
             ))
 
