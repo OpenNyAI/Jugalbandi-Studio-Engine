@@ -1,0 +1,17 @@
+name: reasoning_engine
+description: |
+    The name of the plugin is reasoning_engine. This plugin facilitates reasoning and generating responses based on provided questions and knowledge inputs.
+
+    The inputs needed are:
+        - QUESTION (type:str) : The question for which a reasoned response is required.
+        - KNOWLEDGE (type:list) : A list of knowledge entries relevant to the question. Each entry is represented as a JSON object containing details such as facts, data points, or contextual information.
+        - KEY (type:str) : An API Key to call the engine.
+
+    The outputs provided are:
+        - Response (type:str) : A reasoned and coherent response generated based on the question and provided knowledge. The response synthesizes the relevant information to answer the question effectively.
+
+    Return codes are:
+        - `200`: Success - Indicates that the response was successfully generated.
+        - `400`: Bad Request - Indicates that there was an error in the input data.
+        - `404`: Not Found - Indicates that the specified key could not be found in the knowledge entries.
+        - `500`: Internal Server Error - Indicates a server-side error occurred during the process.

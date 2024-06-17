@@ -1,0 +1,23 @@
+name: knowledge_base
+description: |
+    The name of the plugin is knowledge_base. This plugin fetches relevant knowledge entries from a vector database based on a provided query.
+    
+    The inputs needed are:
+        - QUERY (type:str) : The query for which relevant knowledge entries are required.
+  
+        - VECTOR_DB (type:str) : The identifier for the vector database to be queried.
+  
+        - KEY (type:str) : An API Key to access the vector database.
+
+    The outputs provided are:
+        - KnowledgeEntries (type:list) : A list of knowledge entries fetched from the vector database. Each entry is represented as a JSON object containing details such as facts, data points, or contextual information.
+        
+    Return codes are:
+        - `200`: Success - Indicates that the knowledge entries were successfully fetched.
+  
+        - `400`: Bad Request - Indicates that there was an error in the input data.
+  
+        - `404`: Not Found - Indicates that no relevant knowledge entries were found in the vector database.
+  
+        - `500`: Internal Server Error - Indicates a server-side error occurred during the process."
+
