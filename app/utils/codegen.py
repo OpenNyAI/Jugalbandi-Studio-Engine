@@ -36,6 +36,7 @@ class CodeGen:
     def generate_pydantic_class(self, fsm_name, variables):
         var_map = {
             "str": "str",
+            "string": "str",
             "int": "int",
             "float": "float",
             "bool": "bool",

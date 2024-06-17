@@ -28,6 +28,7 @@ from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
+from .utils.mermaid_chart import generate_mermaid_chart
 
 
 def utcnow():
@@ -91,6 +92,7 @@ class JBEngine(PwRStudioEngine):
         chat_history = [
             Message(type=x.type, content=x.message) for x in chat_history_strings
         ]
+
         try:
             dsl = json.loads(self._project.representations["dsl"].text)
         except Exception as e:
@@ -166,6 +168,7 @@ class JBEngine(PwRStudioEngine):
             errors,
             debug=True,
         )
+        chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
 
@@ -175,8 +178,8 @@ class JBEngine(PwRStudioEngine):
         if nlr is not None:
             self._project.representations["description"].text = nlr
 
-        # if d.change.diagram is not None:
-        #     self._project.representations['diagram'].text = d.change.diagram
+        if chart is not None:
+            self._project.representations["diagram"].text = chart
 
         if code is not None:
             self._project.representations["code"].text = code
