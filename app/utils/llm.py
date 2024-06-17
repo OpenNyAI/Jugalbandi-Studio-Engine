@@ -1,6 +1,6 @@
 import json
 import os
-import openai
+from openai import OpenAI, AzureOpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 
@@ -10,11 +10,17 @@ from termcolor import colored
 #     max=120),
 #     stop=stop_after_attempt(1))
 def llm(messages, **kwargs):
-    client = openai.Client(
-        api_key=os.environ["OPENAI_API_KEY"],
-    )
+    if os.getenv("AZURE_OPENAI_API_KEY"):
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        azure_key = os.getenv("AZURE_OPENAI_API_KEY")
+        api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+        client = AzureOpenAI(
+            azure_endpoint=azure_endpoint, api_key=azure_key, api_version=api_version
+        )
+    else:
+        client = OpenAI()
 
-    kwargs["model"] = kwargs.get("model", "gpt-4-1106-preview")
+    kwargs["model"] = kwargs.get("model", "gpt-4-turbo")
     kwargs["messages"] = messages
     args = {
         k: v

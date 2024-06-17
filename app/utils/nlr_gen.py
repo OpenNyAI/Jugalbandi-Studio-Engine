@@ -116,15 +116,15 @@ def generate_nlr(dsl):
             transitions_info.append(
                 f"\n\nThe conditions to transition to the next steps are:\n\n"
             )
-            for t in task["transitions"]:
-                transition_code = t.get("description", "Unknown")
+            for t in task["conditions"]:
+                transition_code = t.get("condition", "Unknown")
                 transition_goto = t.get("goto", "Unknown")
 
                 transitions_info.append(
                     f"If `{transition_code}` then go to `{transition_goto}`.\n\n"
                 )
             return "\n - ".join(transitions_info)
-        return "No specific conditions to transition to another step."
+        return "" #"No specific conditions to transition to another step."
 
     nlr = []
 
@@ -148,7 +148,8 @@ def generate_nlr(dsl):
         nlr.append("\n## Variables")
         for var in dsl["variables"]:
             nlr.append(get_variable_info(var))
-    return "\n".join(nlr)
+    nlr_str = "\n".join(nlr)
+    return nlr_str.replace("\n\n", "\n").strip()
 
 
 if __name__ == "__main__":

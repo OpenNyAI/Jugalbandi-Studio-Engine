@@ -27,6 +27,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
+from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
 
 
@@ -87,8 +88,11 @@ class JBEngine(PwRStudioEngine):
 
     async def _process_utterance(self, text, **kwargs):
 
-        chat_history = kwargs.get("chat_history", [])
-        chat_history = [Message(type=x.type, content=x.message) for x in chat_history]
+        chat_history_strings = kwargs.get("chat_history", [])
+        chat_history = [
+            Message(type=x.type, content=x.message) for x in chat_history_strings
+        ]
+
         try:
             dsl = json.loads(self._project.representations["dsl"].text)
         except Exception as e:
@@ -152,14 +156,21 @@ class JBEngine(PwRStudioEngine):
 
         nl2dsl.nl2dsl()
 
-        # nl2dsl.validate_dsl()
-
+        errors = nl2dsl.validate_dsl()
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
+        feedback = generate_feedback(
+            chat_history_strings
+            + [
+                text,
+            ],
+            nlr,
+            errors,
+            debug=True,
+        )
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
-        user_output = "A response has been generated."
 
         if nl2dsl.dsl is not None:
             self._project.representations["dsl"].text = json.dumps(nl2dsl.dsl, indent=4)
@@ -187,11 +198,7 @@ class JBEngine(PwRStudioEngine):
         #     ))
 
         await self._progress(
-            Response(
-                type="output",
-                message=f"DSL has been updated successfully! 🎉",
-                project=self._project,
-            )
+            Response(type="output", message=feedback, project=self._project)
         )
 
     async def _get_output(self, user_input, **kwargs):
