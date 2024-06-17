@@ -124,7 +124,7 @@ def generate_nlr(dsl):
                     f"If `{transition_code}` then go to `{transition_goto}`.\n\n"
                 )
             return "\n - ".join(transitions_info)
-        return "" #"No specific conditions to transition to another step."
+        return ""  # "No specific conditions to transition to another step."
 
     nlr = []
 
