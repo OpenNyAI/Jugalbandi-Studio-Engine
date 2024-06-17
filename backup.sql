@@ -23,19 +23,10 @@ COPY public.plugins (id, name, description, pypi_url, dsl, doc, icon, created_at
 
 
 --
--- Data for Name: tags; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: templates; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tags (id, name) FROM stdin;
-\.
-
-
---
--- Data for Name: template_has_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.template_has_credentials (id, template_id, name, description, mandatory, created_at) FROM stdin;
-\.
+INSERT INTO public.templates (id, name, description, project_class, created_at, updated_at, engine_url, file_upload, audio_upload, has_credentials, verified, sort) VALUES (1, 'JB App', 'Use this to create apps using JugalBandi', 'jb_app', '2023-05-10 07:32:03.987439', '2023-05-04 13:47:56.492011', false, false, false, false, true, 0);
 
 
 --
