@@ -27,7 +27,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
-from .utils.feedback_gen import generate_feedback
+from .utils.feedback_gen import generate_feedback, generate_feedback_v2
 from .utils.mermaid_chart import generate_mermaid_chart
 
 
@@ -145,7 +145,7 @@ class JBEngine(PwRStudioEngine):
                 status_update_callback(f"Generating the final program ...")
 
         status_update_callback(f"Generating a plan to update the program ...")
-
+        old_nlr = generate_nlr(dsl)
         nl2dsl = NL2DSL(
             utterance=text,
             dsl=dsl,
@@ -159,13 +159,14 @@ class JBEngine(PwRStudioEngine):
         errors = nl2dsl.validate_dsl()
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
-        feedback = generate_feedback(
+        feedback = generate_feedback_v2(
             chat_history_strings
             + [
                 text,
             ],
             nlr,
             errors,
+            old_nlr,
             debug=True,
         )
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])

@@ -1,6 +1,29 @@
 from .llm import llm, sm, um
 
 
+def generate_diff(old_nlr, new_nlr, **kwargs):
+    template_str = f"""You are a developer bot that is developing a program as per the following user instruction. 
+The program plan has been updated.
+Here is the older plan: {old_nlr}
+
+Here is the updated plan: {new_nlr}
+
+Write one point on the steps that have been completed or updated in the new plan. Return in atmost 10 words. Think step by step. Be clear and concise.
+"""
+    result = llm(
+        [
+            sm(
+                "You are a developer bot that is helping users to understand the changes in the program plan."
+            ),
+            um(template_str),
+        ],
+    )
+    if result and len(result) > 0:
+        return result
+    else:
+        return "The program has been updated as per instruction"
+
+
 def generate_feedback(user_history, dsl_desc, errors, **kwargs):
 
     if not user_history or len(user_history) < 1:
@@ -41,4 +64,10 @@ Return at most 3 bullet points. Each bullet point should be in simple english an
     if result and len(result) > 0:
         return f"Here are some next steps that can be tried:\n {result}"
     else:
-        return "The program has been updated as per instruction"
+        return ""
+
+
+def generate_feedback_v2(user_history, dsl_desc, errors, old_nlr, **kwargs):
+    diff = generate_diff(old_nlr, dsl_desc)
+    feedback = generate_feedback(user_history, dsl_desc, errors, **kwargs)
+    return f"{diff}\n{feedback}"
