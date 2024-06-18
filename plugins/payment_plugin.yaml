@@ -1,4 +1,4 @@
-name: payment
+name: payment_plugin
 description: |
     The name of the plugin is payment. This plugin helps in collecting a payment from the user by generating a payment link.
 
