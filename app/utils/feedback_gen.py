@@ -24,7 +24,10 @@ Write one point on the steps that have been completed or updated in the new plan
         return "The program has been updated as per instruction"
 
 
-def generate_feedback(user_history, dsl_desc, errors, **kwargs):
+def generate_feedback(user_history, dsl_desc, errors_dict, **kwargs):
+    errors = errors_dict.get("errors", [])
+    errors.extend(errors_dict.get("warnings", []))
+    errors.extend(errors_dict.get("info", []))
 
     if not user_history or len(user_history) < 1:
         return ""
