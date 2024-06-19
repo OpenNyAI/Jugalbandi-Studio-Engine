@@ -81,6 +81,13 @@ def generate_mermaid_chart(flow):
             error_task = task["error_goto"]
             if error_task:
                 links.append(f"`{task_id}` {fail_arrow} `{error_task}`")
+        if "else_goto" in task:
+            else_task = task["else_goto"]
+            else_description = task.get("else_description", "else")
+            if else_task:
+                links.append(
+                    f"`{task_id}` {fail_arrow}|{else_description}| `{else_task}`"
+                )
 
         if "transitions" in task:
             for transition in task["transitions"]:
