@@ -60,6 +60,8 @@ def extract_plugins(text: str):
 
         parsed_data = yaml.safe_load(file_text)
 
+        print(parsed_data)
+
         if "name" not in parsed_data or "description" not in parsed_data:
             raise Exception(f"Invalid Plugin File: {match}")
 
@@ -185,17 +187,15 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": len(""),
+            "errors": len(errors),
             "warnings": 0,
             "optimizations": 0,
             "botExperience": "80%",
         }
         # TODO fix this at db/contract level
-        # await self._progress(
-        #     Response(
-        #         # type="dsl_state",
-        #         message=json.dumps(program_state)
-        #     ))
+        await self._progress(
+            Response(type="dsl_state", message=json.dumps(program_state))
+        )
 
         await self._progress(
             Response(type="output", message=feedback, project=self._project)
