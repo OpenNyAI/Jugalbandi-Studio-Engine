@@ -96,7 +96,7 @@ def generate_mermaid_chart(flow):
                         f"`{task_id}` {default_arrow}|{condition}| `{next_task}`"
                     )
         if "conditions" in task:
-            for condition in task["conditions"]:
+            for transition in task["conditions"]:
                 if "condition" in transition:
                     condition = transition.get("condition", "")
                 elif "code" in transition:
