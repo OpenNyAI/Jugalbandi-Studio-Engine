@@ -33,7 +33,7 @@ def generate_nlr(dsl):
 
         if "options" in task:
             options = ", ".join(task["options"])
-            task_info.append(f"\n**Options**: {options}")
+            task_info.append(f"\n**Options**: {options}\n")
 
         # if "description" in task:
         #     task_info.append(f"**Description**: {task['description']}\n")
