@@ -101,7 +101,18 @@ class JBEngine(PwRStudioEngine):
             dsl = {
                 "variables": [],
                 "config_vars": [],
-                "dsl": [],
+                "dsl": [
+                    {
+                        "task_type": "start",
+                        "name": "start",
+                        "goto": "end",
+                    },
+                    {
+                        "task_type": "end",
+                        "name": "end",
+                        "goto": None,
+                    },
+                ],
                 "fsm_name": "unnamed_fsm",
             }
         description = self._project.representations["description"].text

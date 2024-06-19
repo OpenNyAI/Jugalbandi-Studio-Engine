@@ -17,7 +17,7 @@ def generate_nlr(dsl):
         task_info = []
 
         if "message" in task and task["message"]:
-            task_info.append(f"**Message**: {task['message']}")
+            task_info.append(f"**Message**: {task['message']}\n\n")
 
         # if "read_variables" in task:
         #     read_vars = ", ".join(task["read_variables"])
@@ -33,7 +33,7 @@ def generate_nlr(dsl):
 
         if "options" in task:
             options = ", ".join(task["options"])
-            task_info.append(f"\n**Options**: {options}")
+            task_info.append(f"\n**Options**: {options}\n")
 
         # if "description" in task:
         #     task_info.append(f"**Description**: {task['description']}\n")
