@@ -17,7 +17,7 @@ def generate_nlr(dsl):
         task_info = []
 
         if "message" in task and task["message"]:
-            task_info.append(f"**Message**: {task['message']}")
+            task_info.append(f"**Message**: {task['message']}\n\n")
 
         # if "read_variables" in task:
         #     read_vars = ", ".join(task["read_variables"])
