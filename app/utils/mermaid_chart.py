@@ -100,7 +100,7 @@ def generate_mermaid_chart(flow):
                     condition = transition.get("description", condition)
                 if next_task:
                     links.append(
-                        f"`{task_id}` {default_arrow}|{condition}| `{next_task}`"
+                        f"`{task_id}` {default_arrow}|{str(condition)}| `{next_task}`"
                     )
         if "conditions" in task:
             for transition in task["conditions"]:
@@ -113,7 +113,7 @@ def generate_mermaid_chart(flow):
                 next_task = transition["goto"]
                 if next_task:
                     links.append(
-                        f"`{task_id}` {default_arrow}|{condition}| `{next_task}`"
+                        f"`{task_id}` {default_arrow}|{str(condition)}| `{next_task}`"
                     )
 
     for task in flow:
@@ -128,7 +128,7 @@ def generate_mermaid_chart(flow):
         stroke = color["stroke"]
         text_color = color["text_color"]
         mermaid_chart.append(
-            f"classDef task{task_type} fill:{fill},stroke:{stroke},stroke-width:2px,color:{text_color},max-width:200px,wrap:true,font-size:15px;"
+            f"classDef task{task_type} fill:{fill},stroke:{stroke},stroke-width:2px,color:{text_color},max-width:10px,wrap:true,font-size:15px;"
         )
 
     custom_styles = """
