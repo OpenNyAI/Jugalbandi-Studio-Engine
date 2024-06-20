@@ -38,10 +38,16 @@ colors = {
     },  # LightSteelBlue for end
 }
 
-
 success_arrow = "-->"
 fail_arrow = "-.->"
 default_arrow = "==>"
+
+
+def split_long_text(text, max_words=10):
+    words = text.split(" ")
+    return "<br>".join(
+        [" ".join(words[i : i + max_words]) for i in range(0, len(words), max_words)]
+    )
 
 
 def generate_mermaid_chart(flow):
@@ -52,8 +58,10 @@ def generate_mermaid_chart(flow):
         task_type = task.get("task_type")
         if task_type == "print":
             label = task.get("message", task.get("name"))
+            label = split_long_text(label)
         elif task_type == "input":
             label = task.get("message", task.get("name"))
+            label = split_long_text(label)
         elif task_type == "operation":
             label = task.get("description", task.get("name"))
             label = label.replace("\n", "<br>")
@@ -83,7 +91,7 @@ def generate_mermaid_chart(flow):
                 links.append(f"`{task_id}` {fail_arrow} `{error_task}`")
         if "else_goto" in task:
             else_task = task["else_goto"]
-            else_description = task.get("else_description", "else")
+            else_description = split_long_text(task.get("else_description", "else"))
             if else_task:
                 links.append(
                     f'`{task_id}` {fail_arrow}|"{else_description}"| `{else_task}`'
@@ -102,6 +110,7 @@ def generate_mermaid_chart(flow):
                     condition = transition.get("condition_description", condition)
                 if next_task:
                     condition = condition.replace('"', '\\"')
+                    condition = split_long_text(condition)
                     links.append(
                         f'`{task_id}` {default_arrow} |"{condition}"| `{next_task}`'
                     )
@@ -118,6 +127,7 @@ def generate_mermaid_chart(flow):
                 next_task = transition["goto"]
                 if next_task:
                     condition = condition.replace('"', '\\"')
+                    condition = split_long_text(condition)
                     links.append(
                         f'`{task_id}` {default_arrow}|"{condition}"| `{next_task}`'
                     )
@@ -134,15 +144,7 @@ def generate_mermaid_chart(flow):
         stroke = color["stroke"]
         text_color = color["text_color"]
         mermaid_chart.append(
-            f"classDef task{task_type} fill:{fill},stroke:{stroke},stroke-width:2px,color:{text_color},max-width:10px,wrap:true,font-size:15px;"
+            f"classDef task{task_type} fill:{fill},stroke:{stroke},stroke-width:2px,color:{text_color},max-width:150px,wrap:true,font-size:15px;"
         )
-
-    custom_styles = """
-        classDef taskplugin fill:#dda0dd,stroke:#ba55d3,stroke-width:2px,color:#000000,max-width:200px,wrap:true,font-size:15px;
-        classDef taskinput fill:#add8e6,stroke:#4682b4,stroke-width:2px,color:#000000,max-width:200px,wrap:true,font-size:15px;
-        classDef taskcondition fill:#d3d3d3,stroke:#a9a9a9,stroke-width:2px,color:#000000,max-width:200px,wrap:true,font-size:15px;
-        classDef taskend fill:#b0c4de,stroke:#778899,stroke-width:2px,color:#000000,max-width:200px,wrap:true,font-size:15px;
-    """
-    mermaid_chart.append(custom_styles)
 
     return "\n".join(mermaid_chart)
