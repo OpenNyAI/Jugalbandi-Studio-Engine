@@ -11,11 +11,13 @@ import yaml
 from typing import List
 from pydantic import BaseModel
 from datetime import datetime, timezone
-
+import logging
 
 from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
+
+logging.basicConfig(level=logging.INFO)
 
 
 # need to check and remove the Message class from here
@@ -27,7 +29,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
-from .utils.feedback_gen import generate_feedback, generate_feedback_v2
+from .utils.feedback_gen import generate_feedback_v2
 from .utils.mermaid_chart import generate_mermaid_chart
 
 
@@ -157,6 +159,8 @@ class JBEngine(PwRStudioEngine):
         nl2dsl.nl2dsl()
 
         errors = nl2dsl.validate_dsl()
+        logging.info(json.dumps(errors, indent=4))
+
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         feedback = generate_feedback_v2(
@@ -186,17 +190,18 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": len(""),
-            "warnings": 0,
+            "errors": len(errors["errors"]),
+            "warnings": len(errors["warnings"]),
             "optimizations": 0,
             "botExperience": "80%",
         }
         # TODO fix this at db/contract level
-        # await self._progress(
-        #     Response(
-        #         # type="dsl_state",
-        #         message=json.dumps(program_state)
-        #     ))
+        await self._progress(
+            Response(
+                # type="dsl_state",
+                message=json.dumps(program_state)
+            )
+        )
 
         await self._progress(
             Response(type="output", message=feedback, project=self._project)
