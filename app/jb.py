@@ -92,7 +92,6 @@ class JBEngine(PwRStudioEngine):
         chat_history = [
             Message(type=x.type, content=x.message) for x in chat_history_strings
         ]
-
         try:
             dsl = json.loads(self._project.representations["dsl"].text)
         except Exception as e:
@@ -186,17 +185,15 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": len(""),
-            "warnings": 0,
-            "optimizations": 0,
-            "botExperience": "80%",
+            "errors": len(errors["errors"]),
+            "warnings": len(errors["warnings"]),
+            "optimizations": 0,  # hard coded for now
+            "botExperience": "80%",  # hard coded for now
         }
         # TODO fix this at db/contract level
-        # await self._progress(
-        #     Response(
-        #         # type="dsl_state",
-        #         message=json.dumps(program_state)
-        #     ))
+        await self._progress(
+            Response(type="dsl_state", message=json.dumps(program_state))
+        )
 
         await self._progress(
             Response(type="output", message=feedback, project=self._project)
@@ -254,11 +251,9 @@ class JBEngine(PwRStudioEngine):
             "optimizations": 0,
             "botExperience": "80%",
         }
-        # await self._progress(
-        #     Response(
-        #         # type="dsl_state",
-        #         message=json.dumps(program_state)
-        #     ))
+        await self._progress(
+            Response(type="dsl_state", message=json.dumps(program_state))
+        )
 
         await self._progress(
             Response(
