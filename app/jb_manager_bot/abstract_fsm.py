@@ -401,7 +401,6 @@ class AbstractFSM(ABC):
     def _on_enter_input_logic(
         self, write_var, options=None, message=None, validation=None
     ):
-        print('here---')
         self.status = Status.WAIT_FOR_ME
         if options:
             task = f"The user provides a response to the {message}."

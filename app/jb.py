@@ -276,10 +276,7 @@ class JBEngine(PwRStudioEngine):
                 state = json.loads(fsm_state)
 
             state = x.run_machine(fsm_callback, user_input, None, {}, state)
-
             self._project.representations["fsm_state"].text = json.dumps(state)
-            print('@@@')
-            print(self._project.representations["fsm_state"].text)
 
         except:
             print(traceback.format_exc())
