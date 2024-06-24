@@ -181,7 +181,7 @@ class JBEngine(PwRStudioEngine):
 
         nl2dsl.nl2dsl()
 
-        errors = nl2dsl.validate_dsl()
+        issues = nl2dsl.validate_dsl()
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
@@ -191,7 +191,7 @@ class JBEngine(PwRStudioEngine):
                 text,
             ],
             nlr,
-            errors,
+            issues,
             old_nlr,
             debug=True,
         )
@@ -212,8 +212,8 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": len(errors["errors"]),
-            "warnings": len(errors["warnings"]),
+            "errors": len(issues["errors"]),
+            "warnings": len(issues["warnings"]),
             "optimizations": 0,  # hard coded for now
             "botExperience": "80%",  # hard coded for now
         }
@@ -245,7 +245,7 @@ class JBEngine(PwRStudioEngine):
         )
 
         # comment out for now
-        # nl2dsl.validate_dsl()
+        issues = nl2dsl.validate_dsl()
 
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         nlr = generate_nlr(nl2dsl.dsl)
@@ -273,10 +273,10 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": 0,
-            "warnings": 0,
-            "optimizations": 0,
-            "botExperience": "80%",
+            "errors": issues["errors"],
+            "warnings": issues["warnings"],
+            "optimizations": 0,  # hard coded for now
+            "botExperience": "80%",  # hard coded for now
         }
         await self._progress(
             Response(type="dsl_state", message=json.dumps(program_state))
