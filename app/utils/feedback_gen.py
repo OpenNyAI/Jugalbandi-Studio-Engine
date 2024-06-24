@@ -2,7 +2,7 @@ from .llm import llm, sm, um
 
 
 def generate_diff(old_nlr, new_nlr, **kwargs):
-    template_str = f"""You are a developer bot that is developing a program as per the following user instruction. 
+    template_str = f"""You will be given two versions of a program plan. You have to identify the changes made in the new plan compared to the old plan. 
 The program plan has been updated.
 Here is the older plan: {old_nlr}
 
