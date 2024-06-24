@@ -29,6 +29,7 @@ from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback, generate_feedback_v2
 from .utils.mermaid_chart import generate_mermaid_chart
+from .utils.question_answer import get_answer_or_instruction
 
 
 def utcnow():
@@ -59,6 +60,8 @@ def extract_plugins(text: str):
         file_text = response.content.decode()
 
         parsed_data = yaml.safe_load(file_text)
+
+        print(parsed_data)
 
         if "name" not in parsed_data or "description" not in parsed_data:
             raise Exception(f"Invalid Plugin File: {match}")
@@ -98,7 +101,18 @@ class JBEngine(PwRStudioEngine):
             dsl = {
                 "variables": [],
                 "config_vars": [],
-                "dsl": [],
+                "dsl": [
+                    {
+                        "task_type": "start",
+                        "name": "start",
+                        "goto": "end",
+                    },
+                    {
+                        "task_type": "end",
+                        "name": "end",
+                        "goto": None,
+                    },
+                ],
                 "fsm_name": "unnamed_fsm",
             }
         description = self._project.representations["description"].text
@@ -116,6 +130,19 @@ class JBEngine(PwRStudioEngine):
         text, plugins = extract_plugins(text)
 
         self_inst = self
+
+        answer_or_inst = get_answer_or_instruction(
+            dsl=json.dumps(dsl), utterance=text, chat_history=chat_history_strings
+        )
+        # print(answer_or_inst)
+
+        if answer_or_inst.startswith("Answer:"):
+            await self._progress(
+                Response(
+                    type="output", message=answer_or_inst[7:], project=self._project
+                )
+            )
+            return
 
         async def async_print(x):
             await self_inst._progress(Response(type="thought", message=x))

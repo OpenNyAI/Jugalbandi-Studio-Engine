@@ -66,6 +66,7 @@ class CodeGen:
             #     class_def += f"    {name}: Optional[Literal[{values}]] = None\n"
             # else:
             #     class_def += f"    {name}: Optional[{var_type}] = None\n"
+            default = None
             if var_type == "int":
                 default = 0
             elif var_type == "float":
