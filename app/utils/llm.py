@@ -5,10 +5,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
 
 
-# @retry(wait=wait_random_exponential(
-#     multiplier=10,
-#     max=120),
-#     stop=stop_after_attempt(1))
+@retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(10))
 def llm(messages, **kwargs):
     if os.getenv("AZURE_OPENAI_API_KEY"):
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
