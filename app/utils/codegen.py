@@ -1,6 +1,9 @@
 import json
 from math import e
 import re
+import sys
+import re
+import ast
 
 # json_data should have the following structure
 # {
@@ -55,6 +58,9 @@ class CodeGen:
             "optional": "Optional",
         }
         class_def = f"class {fsm_name}Variables(BaseModel):\n"
+
+        if len(variables) < 1:
+            class_def += "    pass"
 
         for variable in variables:
             name = variable["name"]
@@ -121,12 +127,18 @@ class CodeGen:
         options = task.get("options", None)
         menu_selector = task.get("menu_selector", None)
         menu_title = task.get("menu_title", None)
+        
+        # correct source of formatted strings
+        msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
+        brace_loc = [m.span()[0] for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
+        for pos in brace_loc[::-1]:
+            message = message[:pos + 1] + "self.variables." + message[pos+1:]
 
         if options:
             method_code = f"""
     def on_enter_{name}(self):
         self._on_enter_display(
-            message="{message}",
+            message=f"{message}",
             options={options},
             menu_selector={menu_selector},
             menu_title={menu_title},
@@ -137,7 +149,7 @@ class CodeGen:
             method_code = f"""
     def on_enter_{name}(self):
         self._on_enter_display(
-            message="{message}",
+            message=f"{message}",
         )
         """
         return method_code
@@ -166,11 +178,24 @@ class CodeGen:
 
     def generate_on_enter_assign(self, task, validation_expression):
         logic_state = f"{task['name']}"
+        
+        varlist = self.variables
+        class VarTweaker(ast.NodeTransformer):
+            def visit_Name(self, node):
+                if node.id in varlist:
+                    return ast.Name(**{**node.__dict__, 'id':"self.variables." + node.id})
+                else:
+                    return node
+        
+        correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
+
         method_code = f"""
     def on_enter_{logic_state}(self):
         variable_name = "{task['write_variable']}"
         expression = "{task['operation']}"
-        validation = lambda x: {validation_expression.replace(task['write_variable'], "x")}
+        def validation(*args):
+            {correct_expr}
+            return self.variables.{str(task['write_variable'])}
         self._on_enter_assign(variable_name, validation)
     """
         return method_code
@@ -383,17 +408,20 @@ class CodeGen:
         self.code = f"""
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
-from jb_manager_bot import (
+from .jb_manager_bot import (
     AbstractFSM,
     FSMOutput,
 )
 import re
 """
-        self.code += self.generate_pydantic_class(
+        pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
+        pydantic_code = '\n'.join(['    ' + l for l in pydantic_code.split('\n')])
+        
         self.code += f"""
 class {self.fsm_class_name}(AbstractFSM):
+{pydantic_code}
     states = {self.states}
     transitions = {self.transitions}
     conditions = {list(self.conditions)}
@@ -470,6 +498,6 @@ class {self.fsm_class_name}(AbstractFSM):
 
 
 if __name__ == "__main__":
-    fsm_code = CodeGen.from_json_file("car-wash/step1/gold.json").generate_fsm_code()
-    with open("car-wash/app/gen_fsm_01.py", "w") as f:
-        f.write(fsm_code)
+    if len(sys.argv) > 1:
+        fsm_code = CodeGen.from_json_file(sys.argv[1]).generate_fsm_code()
+        print(fsm_code)

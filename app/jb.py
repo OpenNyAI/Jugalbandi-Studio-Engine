@@ -7,8 +7,9 @@ import json
 import re
 import requests
 import yaml
+import traceback
 
-from typing import List
+from typing import List, Type, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -17,6 +18,8 @@ from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
+# temporary lib imports
+from .jb_manager_bot import AbstractFSM, FSMOutput
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -29,7 +32,16 @@ from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
+from .utils.convert_dsl_for_test import convert_dsl
 
+# test code runtime
+from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
+from pydantic import BaseModel, Field
+from .jb_manager_bot import (
+    AbstractFSM,
+    FSMOutput,
+)
+import re
 
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -71,7 +83,6 @@ def extract_plugins(text: str):
 
     return text, plugins
 
-
 class JBEngine(PwRStudioEngine):
 
     def __init__(
@@ -86,7 +97,7 @@ class JBEngine(PwRStudioEngine):
             super().__init__(project, progress, credentials=credentials)
 
     def _get_representations(self) -> List[PwRStudioRepresentation]:
-        return [NLRep(), DSLRep(), SJSRep(), CodeRep()]
+        return [NLRep(), DSLRep(), SJSRep(), CodeRep(), TestStateRep()]
 
     async def _process_utterance(self, text, **kwargs):
 
@@ -186,7 +197,11 @@ class JBEngine(PwRStudioEngine):
         # user_output = d.change.llm_review
 
         if nl2dsl.dsl is not None:
-            self._project.representations["dsl"].text = json.dumps(nl2dsl.dsl, indent=4)
+            new_dsl = json.dumps(nl2dsl.dsl, indent=4)
+            self._project.representations["dsl"].text = new_dsl
+            
+            if new_dsl != self._project.representations["dsl"].text:
+                self._project.representations["fsm_state"].text = "{}"
 
         if nlr is not None:
             self._project.representations["description"].text = nlr
@@ -213,7 +228,70 @@ class JBEngine(PwRStudioEngine):
         )
 
     async def _get_output(self, user_input, **kwargs):
-        pass
+        msg_queue = []
+        def fsm_callback(x: FSMOutput):
+            if x.message_data.header:
+                msg_queue.append(x.message_data.header)
+            if x.message_data.body:
+                msg_queue.append(x.message_data.body)
+            if x.message_data.footer:
+                msg_queue.append(x.message_data.footer)
+            if x.options_list:
+                msg_queue.append(x.options_list)
+            if x.media_url:
+                msg_queue.append(x.media_url)
+
+        if user_input == "_reset_chat_" or user_input == "/start":
+            # restart the bot
+            await self._progress(
+                Response(type="thought", message="Starting new bot instance", project=self._project)
+            )
+            user_input = None
+            self._project.representations["fsm_state"].text = "{}"
+
+        try:
+            test_dsl = convert_dsl(self._project.representations["dsl"].text)
+            dsl_obj = json.loads(test_dsl)
+            if dsl_obj['dsl'][0]['name'] != 'zero':
+                inst = {}
+                inst['task_type'] = 'start'
+                inst['name'] = 'zero'
+                inst['goto'] = dsl_obj['dsl'][0]['name']
+                
+                if dsl_obj['dsl'][0]['task_type'] == 'start':
+                    dsl_obj['dsl'][0]['task_type'] = 'print'
+                    dsl_obj['dsl'][0]['message'] = ''
+                
+                dsl_obj['dsl'].insert(0, inst)
+            
+            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
+
+            gen_class_dict = {}
+            exec(test_code, globals(), gen_class_dict)
+            x = gen_class_dict[dsl_obj["fsm_name"]]
+            
+            fsm_state = self._project.representations["fsm_state"].text
+            state = None
+            if fsm_state and fsm_state != "{}":
+                state = json.loads(fsm_state)
+
+            state = x.run_machine(fsm_callback, user_input, None, {}, state)
+
+            self._project.representations["fsm_state"].text = json.dumps(state)
+            print('@@@')
+            print(self._project.representations["fsm_state"].text)
+
+        except:
+            print(traceback.format_exc())
+            await self._progress(
+                Response(type="thought", message="Error in processing dsl", project=self._project)
+            )
+        
+        if len(msg_queue) > 0:
+            for m in msg_queue:
+                await self._progress(Response(type="output", message=m, project=self._project))
+        else:
+            await self._progress(Response(type="thought", message=".", project=self._project))
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
@@ -307,3 +385,7 @@ class DSLRep(PwRStudioRepresentation):
 class CodeRep(PwRStudioRepresentation):
     def _get_initial_values(self):
         return Representation(name="code", text="", type="md", sort_order=1)
+
+class TestStateRep(PwRStudioRepresentation):
+    def _get_initial_values(self):
+        return Representation(name="fsm_state", text="{}", type="md", sort_order=0)
