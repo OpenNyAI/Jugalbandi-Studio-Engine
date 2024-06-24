@@ -12,7 +12,6 @@ from typing import List
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-
 from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
@@ -27,7 +26,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
-from .utils.feedback_gen import generate_feedback, generate_feedback_v2
+from .utils.feedback_gen import generate_feedback_v2
 from .utils.mermaid_chart import generate_mermaid_chart
 from .utils.question_answer import get_answer_or_instruction
 
@@ -183,6 +182,7 @@ class JBEngine(PwRStudioEngine):
         nl2dsl.nl2dsl()
 
         errors = nl2dsl.validate_dsl()
+
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         feedback = generate_feedback_v2(
