@@ -26,7 +26,7 @@ class Message(BaseModel):
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
-from .utils.feedback_gen import generate_feedback_v2
+from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
 from .utils.question_answer import get_answer_or_instruction
 
@@ -185,7 +185,7 @@ class JBEngine(PwRStudioEngine):
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
-        feedback = generate_feedback_v2(
+        feedback = generate_feedback(
             chat_history_strings
             + [
                 text,

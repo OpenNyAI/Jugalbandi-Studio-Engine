@@ -24,7 +24,7 @@ Write one point on the steps that have been completed or updated in the new plan
         return "The program has been updated as per instruction"
 
 
-def generate_feedback(user_history, dsl_desc, errors_dict, **kwargs):
+def generate_future_steps(user_history, dsl_desc, errors_dict, **kwargs):
     errors = errors_dict.get("errors", [])
     errors.extend(errors_dict.get("warnings", []))
     errors.extend(errors_dict.get("info", []))
@@ -70,7 +70,7 @@ Return at most 3 bullet points. Each bullet point should be in simple english an
         return ""
 
 
-def generate_feedback_v2(user_history, dsl_desc, errors, old_nlr, **kwargs):
+def generate_feedback(user_history, dsl_desc, errors, old_nlr, **kwargs):
     diff = generate_diff(old_nlr, dsl_desc)
-    feedback = generate_feedback(user_history, dsl_desc, errors, **kwargs)
+    feedback = generate_future_steps(user_history, dsl_desc, errors, **kwargs)
     return f"{diff}\n{feedback}"
