@@ -114,7 +114,10 @@ def convert_dsl(dsl: str) -> str:
             plugin_inputs = ""
             
             for k, v in task["plugin"]["inputs"].items():
-                plugin_inputs += f"{k}: {{{v}}}\\n"
+                if v in self.all_var_list:
+                    plugin_inputs += f"{k}: {{{v}}}\\n"
+                else:
+                    plugin_inputs += f"{k}: {v}\\n"
             
             plugin_outputs = "api code ," +  ", ".join(task["plugin"]["outputs"].keys())
             plugin_desc = task["description"]
