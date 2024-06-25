@@ -399,8 +399,9 @@ class AbstractFSM(ABC):
         setattr(self.__class__, fn_name, dynamic_fn)
 
     def _on_enter_input_logic(
-        self, write_var, options=None, message=None, validation=None
+        self, write_var, options=None, message=None, validation=None, should_validate=False
     ):
+        print(locals())
         self.status = Status.WAIT_FOR_ME
         if options:
             task = f"The user provides a response to the {message}."
@@ -410,24 +411,26 @@ class AbstractFSM(ABC):
             ]
         else:
             task = f"This is the question being asked to the user: {message}. This is validation that the variable need to pass {validation}. Format and modify the user input into the format requied and if you could not be decide return None. Based on the user's input, return the output in json format: {{'result': <input>}}"
+
+        result = self.current_input
         '''
-        result = Parser.parse_user_input(
-            task,
-            options,
-            self.current_input,
-            azure_endpoint='', #self.credentials["AZURE_OPENAI_API_ENDPOINT"],
-            azure_openai_api_key='', #self.credentials["AZURE_OPENAI_API_KEY"],
-            azure_openai_api_version='', #self.credentials["AZURE_OPENAI_API_VERSION"],
-            openai_api_key='', #self.credentials["OPENAI_API_KEY"],
-        )
+        if not should_validate:
+            result = Parser.parse_user_input(
+                task,
+                options,
+                self.current_input,
+                azure_endpoint='' #self.credentials["AZURE_OPENAI_API_ENDPOINT"],
+                azure_openai_api_key='' #self.credentials["AZURE_OPENAI_API_KEY"],
+                azure_openai_api_version='' #self.credentials["AZURE_OPENAI_API_VERSION"],
+                openai_api_key='' #self.credentials["OPENAI_API_KEY"],
+            )
+            if options:
+                result = result["id"]
+                if result.isdigit():
+                    result = options[int(result) - 1].title
+            else:
+                result = result["result"]
         '''
-        result = {'result':self.current_input}
-        if options:
-            result = result["id"]
-            if result.isdigit():
-                result = options[int(result) - 1].title
-        else:
-            result = result["result"]
         try:
             setattr(self.variables, write_var, result)
         except Exception as e:

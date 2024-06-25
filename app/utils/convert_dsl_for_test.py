@@ -102,7 +102,7 @@ def convert_dsl(dsl: str) -> str:
             jump_list = []
             for t in transitions:
                 jump = {}
-                jump["condition"] = name + "_code == " + t["code"]
+                jump["condition"] = name + "_code == " + str(t["code"])
                 jump["goto"] = t["goto"]
                 jump["description"] = t["description"]
                 jump_list.append(jump)
