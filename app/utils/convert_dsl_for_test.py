@@ -102,7 +102,7 @@ def convert_dsl(dsl: str) -> str:
             jump_list = []
             for t in transitions:
                 jump = {}
-                jump["condition"] = name + "_code == " + t["code"]
+                jump["condition"] = "str(" + name + "_code) == \"" + t["code"] + "\""
                 jump["goto"] = t["goto"]
                 jump["description"] = t["description"]
                 jump_list.append(jump)
@@ -114,7 +114,7 @@ def convert_dsl(dsl: str) -> str:
             plugin_inputs = ""
             
             for k, v in task["plugin"]["inputs"].items():
-                if v in self.all_var_list:
+                if v in all_var_list:
                     plugin_inputs += f"{k}: {{{v}}}\\n"
                 else:
                     plugin_inputs += f"{k}: {v}\\n"

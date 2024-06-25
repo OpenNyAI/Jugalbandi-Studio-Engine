@@ -127,12 +127,12 @@ class CodeGen:
         options = task.get("options", None)
         menu_selector = task.get("menu_selector", None)
         menu_title = task.get("menu_title", None)
-        
+
         # correct source of formatted strings
         msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
         brace_loc = [m.span()[0] for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
         for pos in brace_loc[::-1]:
-            message = message[:pos + 1] + "self.variables." + message[pos+1:]
+            message = message[: pos + 1] + "self.variables." + message[pos + 1 :]
 
         if options:
             method_code = f"""
@@ -178,15 +178,18 @@ class CodeGen:
 
     def generate_on_enter_assign(self, task, validation_expression):
         logic_state = f"{task['name']}"
-        
+
         varlist = self.variables
+
         class VarTweaker(ast.NodeTransformer):
             def visit_Name(self, node):
                 if node.id in varlist:
-                    return ast.Name(**{**node.__dict__, 'id':"self.variables." + node.id})
+                    return ast.Name(
+                        **{**node.__dict__, "id": "self.variables." + node.id}
+                    )
                 else:
                     return node
-        
+
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
 
         method_code = f"""
@@ -350,6 +353,10 @@ class CodeGen:
                     goto = "end"
                 if goto and goto not in self.states and goto != "end":
                     goto = f"{goto}_display"
+                if error_goto is None:
+                    error_goto = "end"
+                if error_goto and error_goto not in self.states and error_goto != "end":
+                    error_goto = f"{error_goto}_display"
 
                 self.transitions.extend(
                     [
@@ -417,8 +424,8 @@ import re
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
-        pydantic_code = '\n'.join(['    ' + l for l in pydantic_code.split('\n')])
-        
+        pydantic_code = "\n".join(["    " + l for l in pydantic_code.split("\n")])
+
         self.code += f"""
 class {self.fsm_class_name}(AbstractFSM):
 {pydantic_code}

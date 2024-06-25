@@ -21,6 +21,7 @@ from pwr_studio.types import ChangedRepresentation, Representation, Response
 # temporary lib imports
 from .jb_manager_bot import AbstractFSM, FSMOutput
 
+
 # need to check and remove the Message class from here
 class Message(BaseModel):
     type: str
@@ -43,6 +44,7 @@ from .jb_manager_bot import (
     FSMOutput,
 )
 import re
+
 
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -83,6 +85,7 @@ def extract_plugins(text: str):
         text = text.replace(f"#plugin({match})", parsed_data["name"], 1)
 
     return text, plugins
+
 
 class JBEngine(PwRStudioEngine):
 
@@ -213,7 +216,7 @@ class JBEngine(PwRStudioEngine):
         if nl2dsl.dsl is not None:
             new_dsl = json.dumps(nl2dsl.dsl, indent=4)
             self._project.representations["dsl"].text = new_dsl
-            
+
             if new_dsl != self._project.representations["dsl"].text:
                 self._project.representations["fsm_state"].text = "{}"
 
@@ -243,6 +246,7 @@ class JBEngine(PwRStudioEngine):
 
     async def _get_output(self, user_input, **kwargs):
         msg_queue = []
+
         def fsm_callback(x: FSMOutput):
             if x.message_data.header:
                 msg_queue.append(x.message_data.header)
@@ -258,7 +262,11 @@ class JBEngine(PwRStudioEngine):
         if user_input == "_reset_chat_" or user_input == "/start":
             # restart the bot
             await self._progress(
-                Response(type="thought", message="Starting new bot instance", project=self._project)
+                Response(
+                    type="thought",
+                    message="Starting new bot instance",
+                    project=self._project,
+                )
             )
             user_input = None
             self._project.representations["fsm_state"].text = "{}"
@@ -266,24 +274,23 @@ class JBEngine(PwRStudioEngine):
         try:
             test_dsl = convert_dsl(self._project.representations["dsl"].text)
             dsl_obj = json.loads(test_dsl)
-            if dsl_obj['dsl'][0]['name'] != 'zero':
+            if dsl_obj["dsl"][0]["name"] != "zero":
                 inst = {}
-                inst['task_type'] = 'start'
-                inst['name'] = 'zero'
-                inst['goto'] = dsl_obj['dsl'][0]['name']
-                
-                if dsl_obj['dsl'][0]['task_type'] == 'start':
-                    dsl_obj['dsl'][0]['task_type'] = 'print'
-                    dsl_obj['dsl'][0]['message'] = ''
-                
-                dsl_obj['dsl'].insert(0, inst)
-            
-            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
+                inst["task_type"] = "start"
+                inst["name"] = "zero"
+                inst["goto"] = dsl_obj["dsl"][0]["name"]
 
+                if dsl_obj["dsl"][0]["task_type"] == "start":
+                    dsl_obj["dsl"][0]["task_type"] = "print"
+                    dsl_obj["dsl"][0]["message"] = ""
+
+                dsl_obj["dsl"].insert(0, inst)
+
+            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
             gen_class_dict = {}
             exec(test_code, globals(), gen_class_dict)
             x = gen_class_dict[dsl_obj["fsm_name"]]
-            
+
             fsm_state = self._project.representations["fsm_state"].text
             state = None
             if fsm_state and fsm_state != "{}":
@@ -295,14 +302,22 @@ class JBEngine(PwRStudioEngine):
         except:
             print(traceback.format_exc())
             await self._progress(
-                Response(type="thought", message="Error in processing dsl", project=self._project)
+                Response(
+                    type="thought",
+                    message="Error in processing dsl",
+                    project=self._project,
+                )
             )
-        
+
         if len(msg_queue) > 0:
             for m in msg_queue:
-                await self._progress(Response(type="output", message=m, project=self._project))
+                await self._progress(
+                    Response(type="output", message=m, project=self._project)
+                )
         else:
-            await self._progress(Response(type="thought", message=".", project=self._project))
+            await self._progress(
+                Response(type="thought", message=".", project=self._project)
+            )
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
@@ -396,6 +411,7 @@ class DSLRep(PwRStudioRepresentation):
 class CodeRep(PwRStudioRepresentation):
     def _get_initial_values(self):
         return Representation(name="code", text="", type="md", sort_order=1)
+
 
 class TestStateRep(PwRStudioRepresentation):
     def _get_initial_values(self):
