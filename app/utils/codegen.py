@@ -343,13 +343,22 @@ class CodeGen:
                             "dest": input_state,
                             "trigger": "next",
                         },
-                        {"source": input_state, "dest": logic_state, "trigger": "next"},
+                        {
+                            "source": input_state,
+                            "dest": logic_state,
+                            "trigger": "next"
+                        }
                     ]
                 )
                 if goto is None:
                     goto = "end"
                 if goto and goto not in self.states and goto != "end":
                     goto = f"{goto}_display"
+                
+                if error_goto is None:
+                    error_goto = "end"
+                if error_goto and error_goto not in self.states and error_goto != "end":
+                    error_goto = f"{error_goto}_display"
 
                 self.transitions.extend(
                     [
