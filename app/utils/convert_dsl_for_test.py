@@ -17,6 +17,19 @@ def convert_dsl(dsl: str) -> str:
     new_dsl["variables"] = old_dsl["variables"]
     new_dsl["dsl"] = old_dsl["dsl"]
     
+    # fix first task as zero
+    if new_dsl['dsl'][0]['name'] != 'zero':
+        inst = {}
+        inst['task_type'] = 'start'
+        inst['name'] = 'zero'
+        inst['goto'] = new_dsl['dsl'][0]['name']
+        
+        if new_dsl['dsl'][0]['task_type'] == 'start':
+            new_dsl['dsl'][0]['task_type'] = 'print'
+            new_dsl['dsl'][0]['message'] = ''
+        
+        new_dsl['dsl'].insert(0, inst)
+
     all_var_list = set([x["name"] for x in new_dsl["variables"]])
     
     # find and replace configs as text inputs
@@ -102,7 +115,28 @@ def convert_dsl(dsl: str) -> str:
             jump_list = []
             for t in transitions:
                 jump = {}
-                jump["condition"] = name + "_code == " + str(t["code"])
+                
+                # fix codes
+                strcode = str(t["code"])
+                codeval = None
+                try:
+                    intval = int(t["code"])
+                    codeval = strcode
+                except:
+                    if strcode == 'SUCCESS':
+                        codeval = '200'
+                    elif strcode == 'CANCELLED_BY_USER':
+                        codeval = '499'
+                    elif strcode == 'EXPIRED':
+                        codeval = '410'
+                    elif strcode == 'SERVER_DOWNTIME':
+                        codeval = '503'
+                    elif strcode == 'SERVER_ERROR':
+                        codeval = '500'
+                    else:
+                        codeval = '200'
+                
+                jump["condition"] = name + "_code == " + codeval
                 jump["goto"] = t["goto"]
                 jump["description"] = t["description"]
                 jump_list.append(jump)
@@ -119,7 +153,7 @@ def convert_dsl(dsl: str) -> str:
                 else:
                     plugin_inputs += f"{k}: {v}\\n"
             
-            plugin_outputs = "api code ," +  ", ".join(task["plugin"]["outputs"].keys())
+            plugin_outputs = "api return code ," +  ", ".join(task["plugin"]["outputs"].keys())
             plugin_desc = task["description"]
             
             common_desc = f"Please enter simulated output of the plugin : {plugin_name}.\\nThe plugin does the following : {plugin_desc}.\\nThe plugin inputs are the following : {plugin_inputs}.\\nProvide values for the following variables : {plugin_outputs}"
@@ -135,7 +169,12 @@ def convert_dsl(dsl: str) -> str:
                 otask = {}
                 otask["task_type"] = "input"
                 otask["name"] = v + "_inp_t"
-                otask["message"] = f"Enter value for {v}"
+
+                if j == 0:
+                    otask["message"] = f"Enter value for plugin api call HTTP code"
+                else:
+                    otask["message"] = f"Enter value for {v}"
+                
                 otask["write_variable"] = v
                 
                 otask["datatype"] = "str"

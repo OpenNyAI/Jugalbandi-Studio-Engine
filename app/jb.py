@@ -266,18 +266,6 @@ class JBEngine(PwRStudioEngine):
         try:
             test_dsl = convert_dsl(self._project.representations["dsl"].text)
             dsl_obj = json.loads(test_dsl)
-            if dsl_obj['dsl'][0]['name'] != 'zero':
-                inst = {}
-                inst['task_type'] = 'start'
-                inst['name'] = 'zero'
-                inst['goto'] = dsl_obj['dsl'][0]['name']
-                
-                if dsl_obj['dsl'][0]['task_type'] == 'start':
-                    dsl_obj['dsl'][0]['task_type'] = 'print'
-                    dsl_obj['dsl'][0]['message'] = ''
-                
-                dsl_obj['dsl'].insert(0, inst)
-            
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
             gen_class_dict = {}
@@ -302,7 +290,7 @@ class JBEngine(PwRStudioEngine):
             for m in msg_queue:
                 await self._progress(Response(type="output", message=m, project=self._project))
         else:
-            await self._progress(Response(type="thought", message=".", project=self._project))
+            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart", project=self._project))
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
