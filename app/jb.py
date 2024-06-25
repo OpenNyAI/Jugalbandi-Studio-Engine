@@ -263,6 +263,7 @@ class JBEngine(PwRStudioEngine):
             user_input = None
             self._project.representations["fsm_state"].text = "{}"
 
+        is_bot_end = False
         try:
             test_dsl = convert_dsl(self._project.representations["dsl"].text)
             dsl_obj = json.loads(test_dsl)
@@ -279,18 +280,24 @@ class JBEngine(PwRStudioEngine):
 
             state = x.run_machine(fsm_callback, user_input, None, {}, state)
             self._project.representations["fsm_state"].text = json.dumps(state)
+            
+            if state and state["main"]["state"] == "zero":
+                is_bot_end = True
 
         except:
             print(traceback.format_exc())
             await self._progress(
                 Response(type="thought", message="Error in processing dsl", project=self._project)
             )
-        
+
         if len(msg_queue) > 0:
             for m in msg_queue:
                 await self._progress(Response(type="output", message=m, project=self._project))
-        else:
-            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart", project=self._project))
+
+        if is_bot_end:
+            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart to test again.", project=self._project))
+        elif len(msg_queue) < 1:
+            await self._progress(Response(type="thought", message="Enter input to proceed.", project=self._project))
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
