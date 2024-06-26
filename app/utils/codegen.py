@@ -420,10 +420,12 @@ class CodeGen:
         self.code = f"""
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
-from .jb_manager_bot import (
-    AbstractFSM,
-    FSMOutput,
-)
+
+#from jb_manager_bot import (
+#    AbstractFSM,
+#    FSMOutput,
+#)
+
 import re
 """
         pydantic_code = self.generate_pydantic_class(

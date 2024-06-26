@@ -1,6 +1,7 @@
 import asyncio
 import threading
 import importlib
+import importlib.util
 import os
 import sys
 import json
@@ -8,6 +9,7 @@ import re
 import requests
 import yaml
 import traceback
+import ctypes
 
 from typing import List, Type, Dict, Any
 from pydantic import BaseModel
@@ -269,16 +271,37 @@ class JBEngine(PwRStudioEngine):
             dsl_obj = json.loads(test_dsl)
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
-            gen_class_dict = {}
-            exec(test_code, globals(), gen_class_dict)
-            x = gen_class_dict[dsl_obj["fsm_name"]]
+            #gen_class_dict = {}
+            #exec(test_code, globals(), gen_class_dict)
+            #tclz = gen_class_dict[dsl_obj["fsm_name"]]
             
+            code_hash = str(ctypes.c_size_t(hash(test_code)).value)
+            
+            module_name = "mod_" + code_hash
+            module_dir = "/tmp/pkg_" + code_hash
+            file_path = module_dir + "/fsm.py"
+            
+            # TODO : handle concurrency
+            if not os.path.isdir(module_dir):
+                os.mkdir(module_dir)
+                with open(file_path, "w") as f:
+                    f.write(test_code)
+                    open(module_dir + "/__init__.py", "a").close()
+
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            setattr(module, 'AbstractFSM', AbstractFSM)
+            setattr(module, 'FSMOutput', FSMOutput)
+            spec.loader.exec_module(module)
+            tclz = getattr(module, dsl_obj["fsm_name"])
+
             fsm_state = self._project.representations["fsm_state"].text
             state = None
             if fsm_state and fsm_state != "{}":
                 state = json.loads(fsm_state)
 
-            state = x.run_machine(fsm_callback, user_input, None, {}, state)
+            state = tclz.run_machine(fsm_callback, user_input, None, {}, state)
             self._project.representations["fsm_state"].text = json.dumps(state)
             
             if state and state["main"]["state"] == "zero":
