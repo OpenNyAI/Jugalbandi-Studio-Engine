@@ -21,7 +21,7 @@ from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
 # temporary lib imports
-from .jb_manager_bot import AbstractFSM, FSMOutput
+from jb_manager_bot import AbstractFSM, FSMOutput
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -40,10 +40,7 @@ from .utils.question_answer import get_answer_or_instruction
 # test code runtime
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
-from .jb_manager_bot import (
-    AbstractFSM,
-    FSMOutput,
-)
+
 import re
 
 def utcnow():
