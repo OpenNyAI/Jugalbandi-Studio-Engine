@@ -104,9 +104,12 @@ class CodeGen:
             message = None
         method_code = f"""
     def on_enter_{state_name}(self):
-        from plugins import {plugin["name"]}
+        # {plugin["name"]} is installed as a module
+        # {plugin["name"]} module has {plugin["name"]}.py file
+        # The file implements plugin as function `invoke_plugin`
+        # `invoke_plugin` is mapped to {plugin["name"]}_func during imports
         self._on_enter_plugin(
-            plugin={plugin["name"]},
+            plugin={plugin["name"]}_func,
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
             message="{message}"        

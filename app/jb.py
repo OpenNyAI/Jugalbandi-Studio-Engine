@@ -58,6 +58,7 @@ def extract_plugins(text: str):
 
     matches: list = re.findall(pattern, text)
     plugins = {}
+    plugin_locations = {}
 
     for match in matches:
         # if not validators.url(match):
@@ -78,10 +79,13 @@ def extract_plugins(text: str):
             raise Exception(f"Invalid Plugin File: {match}")
 
         plugins[parsed_data["name"]] = parsed_data["description"]
+        
+        if parsed_data["location"]:
+            plugin_locations[parsed_data["name"]] = parsed_data["location"]
 
         text = text.replace(f"#plugin({match})", parsed_data["name"], 1)
 
-    return text, plugins
+    return text, plugins, plugin_locations
 
 class JBEngine(PwRStudioEngine):
 
@@ -115,7 +119,7 @@ class JBEngine(PwRStudioEngine):
                 "dsl": [
                     {
                         "task_type": "start",
-                        "name": "start",
+                        "name": "zero",
                         "goto": "end",
                     },
                     {
@@ -138,7 +142,7 @@ class JBEngine(PwRStudioEngine):
         #         message="The input is harmful in nature. Please try again."
         #     ))
         #     return
-        text, plugins = extract_plugins(text)
+        text, plugins, plugin_locations = extract_plugins(text)
 
         self_inst = self
 
@@ -208,6 +212,15 @@ class JBEngine(PwRStudioEngine):
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
+        
+        # include plugins in the dsl
+        dsl_obj = nl2dsl.dsl
+        if len(plugin_locations) > 0:
+            if not 'plugins' in dsl_obj:
+                dsl_obj['plugins'] = {}
+            
+            for pg_name, pg_loc in plugin_locations.items():
+                dsl_obj['plugins'][pg_name] = pg_loc
 
         if nl2dsl.dsl is not None:
             new_dsl = json.dumps(nl2dsl.dsl, indent=4)
@@ -285,11 +298,36 @@ class JBEngine(PwRStudioEngine):
                     f.write(test_code)
                     open(module_dir + "/__init__.py", "a").close()
 
+            # load plugins
+            whl_install_loc = "/tmp/install_loc"
+            if not os.path.exists(whl_install_loc):
+                os.mkdir(whl_install_loc)
+            
+            pg_dict = {}
+            if "plugins" in test_dsl:
+                for pg_name, pg_loc in test_dsl["plugins"].items():
+                    # assuming there is a file with name `{pg_name}.py` that has the plugin function `invoke_plugin`
+                    subprocess.run(["pip", "install", "--no-cache-dir",  pg_loc, "-t", whl_install_loc])
+                    module_name = pg_name + "_mod"
+                    file_path = whl_install_loc + "/" + pg_name + "/" + pg_name + ".py"
+                    
+                    spec = importlib.util.spec_from_file_location(module_name, file_path)
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = module
+                    spec.loader.exec_module(module)
+                    
+                    pg_dict[pg_name + "_func"] = getattr(module, "invoke_plugin")
+
+
             spec = importlib.util.spec_from_file_location(module_name, file_path)
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
             setattr(module, 'AbstractFSM', AbstractFSM)
             setattr(module, 'FSMOutput', FSMOutput)
+            
+            for pg_fname, pg_func in pg_dict.items():
+                setattr(module, pg_fname, pg_func)
+            
             spec.loader.exec_module(module)
             tclz = getattr(module, dsl_obj["fsm_name"])
 
