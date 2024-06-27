@@ -10,6 +10,7 @@ import requests
 import yaml
 import traceback
 import ctypes
+import urllib
 
 from typing import List, Type, Dict, Any
 from pydantic import BaseModel
@@ -302,22 +303,35 @@ class JBEngine(PwRStudioEngine):
             whl_install_loc = "/tmp/install_loc"
             if not os.path.exists(whl_install_loc):
                 os.mkdir(whl_install_loc)
+            sys.path.insert(0, whl_install_loc)
             
             pg_dict = {}
             if "plugins" in test_dsl:
                 for pg_name, pg_loc in test_dsl["plugins"].items():
-                    # assuming there is a file with name `{pg_name}.py` that has the plugin function `invoke_plugin`
-                    subprocess.run(["pip", "install", "--no-cache-dir",  pg_loc, "-t", whl_install_loc])
-                    module_name = pg_name + "_mod"
-                    file_path = whl_install_loc + "/" + pg_name + "/" + pg_name + ".py"
+                    module = None
                     
-                    spec = importlib.util.spec_from_file_location(module_name, file_path)
-                    module = importlib.util.module_from_spec(spec)
-                    sys.modules[module_name] = module
-                    spec.loader.exec_module(module)
+                    if pg_loc.endswith(".py"):
+                        # download file
+                        # assuming it is a file with name `{pg_name}.py` that has the plugin function `invoke_plugin`
+                        py_module_path = whl_install_loc + "/" + pg_name
+                        py_file_pt = py_module_path + "/" + pg_name + ".py"
+                        if not os.path.exists(py_module_path):
+                            os.mkdir(py_module_path)
+                        
+                        pg_file_dw = urllib.URLopener()
+                        pg_file_dw.retrieve(pg_loc, py_file_pt)
+                        
+                        module_name = pg_name + "_mod"
+                        spec = importlib.util.spec_from_file_location(module_name, py_file_pt)
+                        module = importlib.util.module_from_spec(spec)
+                        sys.modules[module_name] = module
+                        spec.loader.exec_module(module)
+                    else:
+                        # assuming that module has the plugin function `invoke_plugin`
+                        subprocess.run(["pip", "install", "--no-cache-dir",  pg_loc, "-t", whl_install_loc])
+                        module = importlib.import_module(pg_name)
                     
                     pg_dict[pg_name + "_func"] = getattr(module, "invoke_plugin")
-
 
             spec = importlib.util.spec_from_file_location(module_name, file_path)
             module = importlib.util.module_from_spec(spec)
