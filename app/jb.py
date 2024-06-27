@@ -1,14 +1,18 @@
 import asyncio
 import threading
 import importlib
+import importlib.util
 import os
 import sys
 import json
 import re
 import requests
 import yaml
+import traceback
+import ctypes
+import urllib
 
-from typing import List
+from typing import List, Type, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -17,6 +21,8 @@ from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
+# temporary lib imports
+from jb_manager_bot import AbstractFSM, FSMOutput
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -29,8 +35,14 @@ from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
+from .utils.convert_dsl_for_test import convert_dsl
 from .utils.question_answer import get_answer_or_instruction
 
+# test code runtime
+from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
+from pydantic import BaseModel, Field
+
+import re
 
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -47,6 +59,7 @@ def extract_plugins(text: str):
 
     matches: list = re.findall(pattern, text)
     plugins = {}
+    plugin_locations = {}
 
     for match in matches:
         # if not validators.url(match):
@@ -67,11 +80,13 @@ def extract_plugins(text: str):
             raise Exception(f"Invalid Plugin File: {match}")
 
         plugins[parsed_data["name"]] = parsed_data["description"]
+        
+        if parsed_data["location"]:
+            plugin_locations[parsed_data["name"]] = parsed_data["location"]
 
         text = text.replace(f"#plugin({match})", parsed_data["name"], 1)
 
-    return text, plugins
-
+    return text, plugins, plugin_locations
 
 class JBEngine(PwRStudioEngine):
 
@@ -87,7 +102,7 @@ class JBEngine(PwRStudioEngine):
             super().__init__(project, progress, credentials=credentials)
 
     def _get_representations(self) -> List[PwRStudioRepresentation]:
-        return [NLRep(), DSLRep(), SJSRep(), CodeRep()]
+        return [NLRep(), DSLRep(), SJSRep(), CodeRep(), TestStateRep()]
 
     async def _process_utterance(self, text, **kwargs):
 
@@ -105,7 +120,7 @@ class JBEngine(PwRStudioEngine):
                 "dsl": [
                     {
                         "task_type": "start",
-                        "name": "start",
+                        "name": "zero",
                         "goto": "end",
                     },
                     {
@@ -128,7 +143,7 @@ class JBEngine(PwRStudioEngine):
         #         message="The input is harmful in nature. Please try again."
         #     ))
         #     return
-        text, plugins = extract_plugins(text)
+        text, plugins, plugin_locations = extract_plugins(text)
 
         self_inst = self
 
@@ -198,9 +213,22 @@ class JBEngine(PwRStudioEngine):
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
+        
+        # include plugins in the dsl
+        dsl_obj = nl2dsl.dsl
+        if len(plugin_locations) > 0:
+            if not 'plugins' in dsl_obj:
+                dsl_obj['plugins'] = {}
+            
+            for pg_name, pg_loc in plugin_locations.items():
+                dsl_obj['plugins'][pg_name] = pg_loc
 
         if nl2dsl.dsl is not None:
-            self._project.representations["dsl"].text = json.dumps(nl2dsl.dsl, indent=4)
+            new_dsl = json.dumps(nl2dsl.dsl, indent=4)
+            self._project.representations["dsl"].text = new_dsl
+            
+            if new_dsl != self._project.representations["dsl"].text:
+                self._project.representations["fsm_state"].text = "{}"
 
         if nlr is not None:
             self._project.representations["description"].text = nlr
@@ -227,7 +255,141 @@ class JBEngine(PwRStudioEngine):
         )
 
     async def _get_output(self, user_input, **kwargs):
-        pass
+        msg_queue = []
+        def fsm_callback(x: FSMOutput):
+            if x.message_data.header:
+                msg_queue.append(x.message_data.header)
+            if x.message_data.body:
+                msg_queue.append(x.message_data.body)
+            if x.message_data.footer:
+                msg_queue.append(x.message_data.footer)
+            if x.options_list:
+                msg_queue.append(x.options_list)
+            if x.media_url:
+                msg_queue.append(x.media_url)
+
+        if user_input == "_reset_chat_" or user_input == "/start":
+            # restart the bot
+            await self._progress(
+                Response(type="thought", message="Starting new bot instance", project=self._project)
+            )
+            user_input = None
+            self._project.representations["fsm_state"].text = "{}"
+
+        is_bot_end = False
+        try:
+            # count plugin tasks
+            old_dsl_obj = json.loads(self._project.representations["dsl"].text)
+            
+            # check if all plugins are implemented
+            pg_names = set([t["plugin"]["name"] for t in old_dsl_obj["dsl"] if t["task_type"] == "plugin"])
+            
+            is_plugin_implemented = True
+            if "plugins" in old_dsl_obj:
+                is_plugin_implemented = not any([x for x in pg_names if x not in test_dsl.get("plugins", {})])
+            else:
+                is_plugin_implemented = False
+            
+            test_dsl = self._project.representations["dsl"].text
+            # tweak the dsl if plugins are not implemented
+            if not is_plugin_implemented:
+                test_dsl = convert_dsl(self._project.representations["dsl"].text)
+            
+            dsl_obj = json.loads(test_dsl)
+            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
+
+            #gen_class_dict = {}
+            #exec(test_code, globals(), gen_class_dict)
+            #tclz = gen_class_dict[dsl_obj["fsm_name"]]
+            
+            code_hash = str(ctypes.c_size_t(hash(test_code)).value)
+            
+            module_name = "mod_" + code_hash
+            module_dir = "/tmp/pkg_" + code_hash
+            file_path = module_dir + "/fsm.py"
+            
+            # TODO : handle concurrency
+            if not os.path.isdir(module_dir):
+                os.mkdir(module_dir)
+                with open(file_path, "w") as f:
+                    f.write(test_code)
+                    open(module_dir + "/__init__.py", "a").close()
+
+            # load plugins only if all are defined
+            # else simulate them via input
+            pg_dict = {}
+            
+            if is_plugin_implemented:
+                whl_install_loc = "/tmp/install_loc"
+                if not os.path.exists(whl_install_loc):
+                    os.mkdir(whl_install_loc)
+                sys.path.insert(0, whl_install_loc)
+
+                if "plugins" in test_dsl:
+                    for pg_name, pg_loc in test_dsl["plugins"].items():
+                        module = None
+                        
+                        if pg_loc.endswith(".py"):
+                            # download file
+                            # assuming it is a file with name `{pg_name}.py` that has the plugin function `invoke_plugin`
+                            py_module_path = whl_install_loc + "/" + pg_name
+                            py_file_pt = py_module_path + "/" + pg_name + ".py"
+                            if not os.path.exists(py_module_path):
+                                os.mkdir(py_module_path)
+                            
+                            pg_file_dw = urllib.URLopener()
+                            pg_file_dw.retrieve(pg_loc, py_file_pt)
+                            
+                            module_name = pg_name + "_mod"
+                            spec = importlib.util.spec_from_file_location(module_name, py_file_pt)
+                            module = importlib.util.module_from_spec(spec)
+                            sys.modules[module_name] = module
+                            spec.loader.exec_module(module)
+                        else:
+                            # assuming that module has the plugin function `invoke_plugin`
+                            subprocess.run(["pip", "install", "--no-cache-dir",  pg_loc, "-t", whl_install_loc])
+                            module = importlib.import_module(pg_name)
+                        
+                        pg_dict[pg_name + "_func"] = getattr(module, "invoke_plugin")
+
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            setattr(module, 'AbstractFSM', AbstractFSM)
+            setattr(module, 'FSMOutput', FSMOutput)
+            
+            if is_plugin_implemented:
+                for pg_fname, pg_func in pg_dict.items():
+                    setattr(module, pg_fname, pg_func)
+            
+            spec.loader.exec_module(module)
+            tclz = getattr(module, dsl_obj["fsm_name"])
+
+            fsm_state = self._project.representations["fsm_state"].text
+            state = None
+            if fsm_state and fsm_state != "{}":
+                state = json.loads(fsm_state)
+
+            state = tclz.run_machine(fsm_callback, user_input, None, {}, state)
+            self._project.representations["fsm_state"].text = json.dumps(state)
+            
+            if state and state["main"]["state"] == "zero":
+                is_bot_end = True
+
+        except:
+            print(traceback.format_exc())
+            await self._progress(
+                Response(type="thought", message="Error in processing dsl", project=self._project)
+            )
+
+        if len(msg_queue) > 0:
+            for m in msg_queue:
+                await self._progress(Response(type="output", message=m, project=self._project))
+
+        if is_bot_end:
+            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart to test again.", project=self._project))
+        elif len(msg_queue) < 1:
+            await self._progress(Response(type="thought", message="Enter input to proceed.", project=self._project))
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
@@ -321,3 +483,7 @@ class DSLRep(PwRStudioRepresentation):
 class CodeRep(PwRStudioRepresentation):
     def _get_initial_values(self):
         return Representation(name="code", text="", type="md", sort_order=1)
+
+class TestStateRep(PwRStudioRepresentation):
+    def _get_initial_values(self):
+        return Representation(name="fsm_state", text="{}", type="md", sort_order=0)
