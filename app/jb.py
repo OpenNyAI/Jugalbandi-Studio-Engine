@@ -317,13 +317,14 @@ class JBEngine(PwRStudioEngine):
 
             # load plugins only if all are defined
             # else simulate them via input
+            pg_dict = {}
+            
             if is_plugin_implemented:
                 whl_install_loc = "/tmp/install_loc"
                 if not os.path.exists(whl_install_loc):
                     os.mkdir(whl_install_loc)
                 sys.path.insert(0, whl_install_loc)
 
-                pg_dict = {}
                 if "plugins" in test_dsl:
                     for pg_name, pg_loc in test_dsl["plugins"].items():
                         module = None
@@ -357,8 +358,9 @@ class JBEngine(PwRStudioEngine):
             setattr(module, 'AbstractFSM', AbstractFSM)
             setattr(module, 'FSMOutput', FSMOutput)
             
-            for pg_fname, pg_func in pg_dict.items():
-                setattr(module, pg_fname, pg_func)
+            if is_plugin_implemented:
+                for pg_fname, pg_func in pg_dict.items():
+                    setattr(module, pg_fname, pg_func)
             
             spec.loader.exec_module(module)
             tclz = getattr(module, dsl_obj["fsm_name"])
