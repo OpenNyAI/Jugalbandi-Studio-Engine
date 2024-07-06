@@ -80,7 +80,7 @@ def extract_plugins(text: str):
             raise Exception(f"Invalid Plugin File: {match}")
 
         plugins[parsed_data["name"]] = parsed_data["description"]
-        
+
         if parsed_data["location"]:
             plugin_locations[parsed_data["name"]] = parsed_data["location"]
 
@@ -213,20 +213,20 @@ class JBEngine(PwRStudioEngine):
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
-        
+
         # include plugins in the dsl
         dsl_obj = nl2dsl.dsl
         if len(plugin_locations) > 0:
             if not 'plugins' in dsl_obj:
                 dsl_obj['plugins'] = {}
-            
+
             for pg_name, pg_loc in plugin_locations.items():
                 dsl_obj['plugins'][pg_name] = pg_loc
 
         if nl2dsl.dsl is not None:
             new_dsl = json.dumps(nl2dsl.dsl, indent=4)
             self._project.representations["dsl"].text = new_dsl
-            
+
             if new_dsl != self._project.representations["dsl"].text:
                 self._project.representations["fsm_state"].text = "{}"
 
@@ -255,6 +255,9 @@ class JBEngine(PwRStudioEngine):
         )
 
     async def _get_output(self, user_input, **kwargs):
+        # to remove trailing new lines
+        user_input = user_input.strip()
+
         msg_queue = []
         def fsm_callback(x: FSMOutput):
             if x.message_data.header:
@@ -264,11 +267,11 @@ class JBEngine(PwRStudioEngine):
             if x.message_data.footer:
                 msg_queue.append(x.message_data.footer)
             if x.options_list:
-                msg_queue.append(x.options_list)
+                msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
             if x.media_url:
                 msg_queue.append(x.media_url)
 
-        if user_input == "_reset_chat_" or user_input == "/start":
+        if user_input == "_reset_chat_" or user_input == "/start" or user_input == "hi":
             # restart the bot
             await self._progress(
                 Response(type="thought", message="Starting new bot instance", project=self._project)
@@ -278,36 +281,20 @@ class JBEngine(PwRStudioEngine):
 
         is_bot_end = False
         try:
-            # count plugin tasks
-            old_dsl_obj = json.loads(self._project.representations["dsl"].text)
-            
-            # check if all plugins are implemented
-            pg_names = set([t["plugin"]["name"] for t in old_dsl_obj["dsl"] if t["task_type"] == "plugin"])
-            
-            is_plugin_implemented = True
-            if "plugins" in old_dsl_obj:
-                is_plugin_implemented = not any([x for x in pg_names if x not in test_dsl.get("plugins", {})])
-            else:
-                is_plugin_implemented = False
-            
-            test_dsl = self._project.representations["dsl"].text
-            # tweak the dsl if plugins are not implemented
-            if not is_plugin_implemented:
-                test_dsl = convert_dsl(self._project.representations["dsl"].text)
-            
+            test_dsl = convert_dsl(self._project.representations["dsl"].text)
             dsl_obj = json.loads(test_dsl)
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
+            # load class via exec
             #gen_class_dict = {}
             #exec(test_code, globals(), gen_class_dict)
             #tclz = gen_class_dict[dsl_obj["fsm_name"]]
-            
+
             code_hash = str(ctypes.c_size_t(hash(test_code)).value)
-            
             module_name = "mod_" + code_hash
             module_dir = "/tmp/pkg_" + code_hash
             file_path = module_dir + "/fsm.py"
-            
+
             # TODO : handle concurrency
             if not os.path.isdir(module_dir):
                 os.mkdir(module_dir)
@@ -315,53 +302,12 @@ class JBEngine(PwRStudioEngine):
                     f.write(test_code)
                     open(module_dir + "/__init__.py", "a").close()
 
-            # load plugins only if all are defined
-            # else simulate them via input
-            pg_dict = {}
-            
-            if is_plugin_implemented:
-                whl_install_loc = "/tmp/install_loc"
-                if not os.path.exists(whl_install_loc):
-                    os.mkdir(whl_install_loc)
-                sys.path.insert(0, whl_install_loc)
-
-                if "plugins" in test_dsl:
-                    for pg_name, pg_loc in test_dsl["plugins"].items():
-                        module = None
-                        
-                        if pg_loc.endswith(".py"):
-                            # download file
-                            # assuming it is a file with name `{pg_name}.py` that has the plugin function `invoke_plugin`
-                            py_module_path = whl_install_loc + "/" + pg_name
-                            py_file_pt = py_module_path + "/" + pg_name + ".py"
-                            if not os.path.exists(py_module_path):
-                                os.mkdir(py_module_path)
-                            
-                            pg_file_dw = urllib.URLopener()
-                            pg_file_dw.retrieve(pg_loc, py_file_pt)
-                            
-                            module_name = pg_name + "_mod"
-                            spec = importlib.util.spec_from_file_location(module_name, py_file_pt)
-                            module = importlib.util.module_from_spec(spec)
-                            sys.modules[module_name] = module
-                            spec.loader.exec_module(module)
-                        else:
-                            # assuming that module has the plugin function `invoke_plugin`
-                            subprocess.run(["pip", "install", "--no-cache-dir",  pg_loc, "-t", whl_install_loc])
-                            module = importlib.import_module(pg_name)
-                        
-                        pg_dict[pg_name + "_func"] = getattr(module, "invoke_plugin")
-
             spec = importlib.util.spec_from_file_location(module_name, file_path)
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
             setattr(module, 'AbstractFSM', AbstractFSM)
             setattr(module, 'FSMOutput', FSMOutput)
-            
-            if is_plugin_implemented:
-                for pg_fname, pg_func in pg_dict.items():
-                    setattr(module, pg_fname, pg_func)
-            
+
             spec.loader.exec_module(module)
             tclz = getattr(module, dsl_obj["fsm_name"])
 
@@ -372,7 +318,7 @@ class JBEngine(PwRStudioEngine):
 
             state = tclz.run_machine(fsm_callback, user_input, None, {}, state)
             self._project.representations["fsm_state"].text = json.dumps(state)
-            
+
             if state and state["main"]["state"] == "zero":
                 is_bot_end = True
 
