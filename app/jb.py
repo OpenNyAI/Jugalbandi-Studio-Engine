@@ -267,9 +267,24 @@ class JBEngine(PwRStudioEngine):
             if x.message_data.footer:
                 msg_queue.append(x.message_data.footer)
             if x.options_list:
-                msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
+                #msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
+                pass
             if x.media_url:
                 msg_queue.append(x.media_url)
+
+        def get_input_parts(x: str):
+            if x is not None:
+                if '\xa1' in x:
+                    input_data = x.split('\xa1')[0]
+                    try:
+                        jobj = json.loads(input_data)
+                        return list(jobj["vars"].values())
+                    except:
+                        return [input_data, ]
+                else:
+                    return [x, ]
+            else:
+                return [None, ]
 
         if user_input == "_reset_chat_" or user_input == "/start" or user_input == "hi":
             # restart the bot
@@ -316,7 +331,10 @@ class JBEngine(PwRStudioEngine):
             if fsm_state and fsm_state != "{}":
                 state = json.loads(fsm_state)
 
-            state = tclz.run_machine(fsm_callback, user_input, None, {}, state)
+            input_parts = get_input_parts(user_input)
+            for inp in input_parts:
+                state = tclz.run_machine(fsm_callback, inp, None, {}, state)
+
             self._project.representations["fsm_state"].text = json.dumps(state)
 
             if state and state["main"]["state"] == "zero":

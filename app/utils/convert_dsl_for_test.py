@@ -8,6 +8,13 @@ def create_var(name, vtype):
     var_info["validation"] = f"isinstance({name}, {vtype})"
     return var_info
 
+def make_str_format_friendly(msg:str):
+    msg = msg.replace('{', '{{')
+    msg = msg.replace('}', '}}')
+    msg = msg.replace('\n', '\\n')
+    msg = msg.replace('"', '\\"')
+    return msg
+
 def convert_dsl(dsl: str) -> str:
     old_dsl = json.loads(dsl)
     new_dsl = {}
@@ -61,7 +68,21 @@ def convert_dsl(dsl: str) -> str:
             idesc = cfg['description']
             inp_task["task_type"] = "input"
             inp_task["name"] = iname + "_cnf_t"
-            inp_task["message"] = f"Enter value for {iname}, {idesc}"
+
+            # custom message for first input
+            if i == 0:
+                all_cvar_names = ['"' + x["name"] + '"' for x in new_dsl["config_vars"]]
+                cv_names = ', '.join(all_cvar_names)
+                cvar_config = f'{{"type": "form","vars": [{cv_names}]}}'
+                dsl_msg = cvar_config + '\xa1' + "Enter the values for the following configuration variables:\n\n" + '\n\n'.join(all_cvar_names)
+
+                # make this object codegen compliant
+                dsl_msg = make_str_format_friendly(dsl_msg)
+
+                inp_task["message"] =  dsl_msg
+            else:
+                inp_task["message"] = ""
+
             inp_task["write_variable"] = iname
             inp_task["datatype"] = "str"
 
@@ -165,10 +186,10 @@ def convert_dsl(dsl: str) -> str:
                 else:
                     plugin_inputs += f"{k}: {v}\\n"
 
-            plugin_outputs = "api return code ," +  ", ".join(task["plugin"]["outputs"].keys())
+            plugin_outputs = "api return code\\n" +  "\\n".join(task["plugin"]["outputs"].keys())
             plugin_desc = task["description"]
 
-            common_desc = f"##plugin {plugin_name}##\\n\\nPlease enter simulated output of the plugin : {plugin_name}.\\nThe plugin does the following : {plugin_desc}.\\nThe plugin inputs are the following : {plugin_inputs}.\\nProvide values for the following variables : {plugin_outputs}"
+            common_desc = f"##plugin {plugin_name}##\\n\\nPlease enter simulated output of the plugin :\\n\\nThe plugin does the following : {plugin_desc}\\n\\nThe plugin inputs are the following : {plugin_inputs}\\nProvide values for the following variables :\\n{plugin_outputs}"
 
             first_output_task = {}
             first_output_task["task_type"] = "print"
@@ -189,7 +210,7 @@ def convert_dsl(dsl: str) -> str:
 
                 otask["write_variable"] = v
                 otask["datatype"] = "str"
-                
+
                 if j == 0 and len(t_choices) > 0:
                     otask["options"] = t_choices
 
@@ -215,6 +236,17 @@ def convert_dsl(dsl: str) -> str:
 
             for j in range(len(nsteps)):
                 new_dsl["dsl"].insert(pos + j, nsteps[j])
+
+    # for input fields with options, add json to select drop down
+    for step in new_dsl["dsl"]:
+        if step["task_type"] == "input":
+            if "options" in step and step["options"] is not None and len(step["options"]) > 0:
+                if '\xa1' not in step["message"]:
+                    json_ops = {}
+                    json_ops["type"] = "dropdown"
+                    json_ops["options"] = step["options"]
+                    opt_str = make_str_format_friendly(json.dumps(json_ops))
+                    step["message"] = opt_str + '\xa1' + step["message"]
 
     return json.dumps(new_dsl, indent=4)
 

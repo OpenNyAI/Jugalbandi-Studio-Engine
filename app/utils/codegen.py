@@ -112,7 +112,7 @@ class CodeGen:
             plugin={plugin["name"]}_func,
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
-            message="{message}"        
+            message="{message}"
         )
     """
         return method_code
@@ -130,12 +130,13 @@ class CodeGen:
         options = task.get("options", None)
         menu_selector = task.get("menu_selector", None)
         menu_title = task.get("menu_title", None)
-        
+
         # correct source of formatted strings
         msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
-        brace_loc = [m.span()[0] for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
-        for pos in brace_loc[::-1]:
-            message = message[:pos + 1] + "self.variables." + message[pos+1:]
+        brace_ranges = [m.span() for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
+        for pos_s, pos_e in brace_ranges[::-1]:
+            if message[pos_s + 1:pos_e - 1] in self.variables:
+                message = message[:pos_s + 1] + "self.variables." + message[pos_s+1:]
 
         if options:
             method_code = f"""
