@@ -15,6 +15,13 @@ def make_str_format_friendly(msg:str):
     msg = msg.replace('"', '\\"')
     return msg
 
+def make_message_for_variable_list(var_type, var_list):
+    all_cvar_names = ['"' + x + '"' for x in var_list]
+    cv_names = ', '.join(all_cvar_names)
+    cvar_config = f'{{"type": "form","vars": [{cv_names}]}}'
+    msg = cvar_config + '\xa1' + f"Enter the values for the following {var_type}:\n\n" + '\n\n'.join(all_cvar_names)
+    return msg
+
 def convert_dsl(dsl: str) -> str:
     old_dsl = json.loads(dsl)
     new_dsl = {}
@@ -71,10 +78,7 @@ def convert_dsl(dsl: str) -> str:
 
             # custom message for first input
             if i == 0:
-                all_cvar_names = ['"' + x["name"] + '"' for x in new_dsl["config_vars"]]
-                cv_names = ', '.join(all_cvar_names)
-                cvar_config = f'{{"type": "form","vars": [{cv_names}]}}'
-                dsl_msg = cvar_config + '\xa1' + "Enter the values for the following configuration variables:\n\n" + '\n\n'.join(all_cvar_names)
+                dsl_msg = make_message_for_variable_list("configuration variables", [x["name"] for x in new_dsl["config_vars"]])
 
                 # make this object codegen compliant
                 dsl_msg = make_str_format_friendly(dsl_msg)
@@ -198,6 +202,9 @@ def convert_dsl(dsl: str) -> str:
             first_output_task["goto"] = name + "_code_inp_t"
             substitute_task_list.append(first_output_task)
 
+            print('###############')
+            print(output_vars)
+
             for j, v in enumerate(output_vars):
                 otask = {}
                 otask["task_type"] = "input"
@@ -205,8 +212,15 @@ def convert_dsl(dsl: str) -> str:
 
                 if j == 0:
                     otask["message"] = f"Enter value for plugin api call HTTP code"
+                elif j == 1:
+                    if len(output_vars) > 2:
+                        # ask for all variables
+                        pg_msg = make_message_for_variable_list("plugin outputs", output_vars[1:])
+                        otask["message"] = make_str_format_friendly(pg_msg)
+                    else:
+                        otask["message"] = f"Enter value for {v}"
                 else:
-                    otask["message"] = f"Enter value for {v}"
+                    otask["message"] = ""
 
                 otask["write_variable"] = v
                 otask["datatype"] = "str"
