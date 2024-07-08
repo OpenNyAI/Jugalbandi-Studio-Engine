@@ -66,7 +66,6 @@ def extract_plugins(text: str):
 
     matches: list = re.findall(pattern, text)
     plugins = {}
-    plugin_locations = {}
 
     for match in matches:
         # if not validators.url(match):
@@ -88,12 +87,9 @@ def extract_plugins(text: str):
 
         plugins[parsed_data["name"]] = parsed_data["description"]
 
-        if parsed_data["location"]:
-            plugin_locations[parsed_data["name"]] = parsed_data["location"]
-
         text = text.replace(f"#plugin({match})", parsed_data["name"], 1)
 
-    return text, plugins, plugin_locations
+    return text, plugins
 
 class JBEngine(PwRStudioEngine):
 
@@ -150,7 +146,7 @@ class JBEngine(PwRStudioEngine):
         #         message="The input is harmful in nature. Please try again."
         #     ))
         #     return
-        text, plugins, plugin_locations = extract_plugins(text)
+        text, plugins = extract_plugins(text)
 
         self_inst = self
 
@@ -220,15 +216,6 @@ class JBEngine(PwRStudioEngine):
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
 
         # user_output = d.change.llm_review
-
-        # include plugins in the dsl
-        dsl_obj = nl2dsl.dsl
-        if len(plugin_locations) > 0:
-            if not 'plugins' in dsl_obj:
-                dsl_obj['plugins'] = {}
-
-            for pg_name, pg_loc in plugin_locations.items():
-                dsl_obj['plugins'][pg_name] = pg_loc
 
         if nl2dsl.dsl is not None:
             new_dsl = json.dumps(nl2dsl.dsl, indent=4)
@@ -307,8 +294,6 @@ class JBEngine(PwRStudioEngine):
             dsl_obj = json.loads(test_dsl)
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
-            print(test_code)
-
             # load class via exec
             #gen_class_dict = {}
             #exec(test_code, globals(), gen_class_dict)
@@ -329,8 +314,6 @@ class JBEngine(PwRStudioEngine):
             spec = importlib.util.spec_from_file_location(module_name, file_path)
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
-            setattr(module, 'AbstractFSM', AbstractFSM)
-            setattr(module, 'FSMOutput', FSMOutput)
 
             spec.loader.exec_module(module)
             tclz = getattr(module, dsl_obj["fsm_name"])

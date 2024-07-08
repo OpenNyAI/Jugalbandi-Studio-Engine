@@ -176,9 +176,6 @@ def convert_dsl(dsl: str) -> str:
             first_output_task["goto"] = name + "_code_inp_t"
             substitute_task_list.append(first_output_task)
 
-            print('###############')
-            print(output_vars)
-
             for j, v in enumerate(output_vars):
                 otask = {}
                 otask["task_type"] = "input"

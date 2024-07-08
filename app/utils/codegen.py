@@ -425,21 +425,17 @@ class CodeGen:
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
 
-#from jb_manager_bot import (
-#    AbstractFSM,
-#    FSMOutput,
-#)
-
+from jb_manager_bot import (
+    AbstractFSM,
+    FSMOutput,
+)
 import re
 """
-        pydantic_code = self.generate_pydantic_class(
+        self.code += self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
-        pydantic_code = '\n'.join(['    ' + l for l in pydantic_code.split('\n')])
-        
         self.code += f"""
 class {self.fsm_class_name}(AbstractFSM):
-{pydantic_code}
     states = {self.states}
     transitions = {self.transitions}
     conditions = {list(self.conditions)}
