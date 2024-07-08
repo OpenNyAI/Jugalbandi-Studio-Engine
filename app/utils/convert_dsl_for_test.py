@@ -96,6 +96,7 @@ def convert_dsl(dsl: str) -> str:
 
             inp_task["goto"] = next_task
             inp_task["error_goto"] = next_task
+            inp_task["should_validate"] = False
 
             new_input_tasks.append(inp_task)
 
@@ -143,40 +144,13 @@ def convert_dsl(dsl: str) -> str:
             for t in transitions:
                 # fix codes
                 strcode = str(t["code"])
-                codeval = None
-                is_numeric = False
-                try:
-                    intval = int(t["code"])
-                    codeval = strcode
-                    is_numeric = True
-                except:
-                    if strcode == 'SUCCESS':
-                        codeval = '200'
-                    elif strcode == 'CANCELLED_BY_USER':
-                        codeval = '499'
-                    elif strcode == 'EXPIRED':
-                        codeval = '410'
-                    elif strcode == 'SERVER_DOWNTIME':
-                        codeval = '503'
-                    elif strcode == 'SERVER_ERROR':
-                        codeval = '500'
-                    else:
-                        codeval = '200'
 
                 jump = {}
-                t_choices.append(codeval)
-                jump["condition"] = name + "_code == '" + codeval + "'"
+                t_choices.append(strcode)
+                jump["condition"] = name + "_code == '" + strcode + "'"
                 jump["goto"] = t["goto"]
                 jump["description"] = t["description"]
                 jump_list.append(jump)
-
-                if not is_numeric:
-                    jump = {}
-                    t_choices.append(strcode)
-                    jump["condition"] = name + "_code == '" + strcode + "'"
-                    jump["goto"] = t["goto"]
-                    jump["description"] = t["description"]
-                    jump_list.append(jump)
 
             api_result_branch["conditions"] = jump_list
 
@@ -209,6 +183,7 @@ def convert_dsl(dsl: str) -> str:
                 otask = {}
                 otask["task_type"] = "input"
                 otask["name"] = v + "_inp_t"
+                otask["should_validate"] = False
 
                 if j == 0:
                     otask["message"] = f"Enter value for plugin api call HTTP code"

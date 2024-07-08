@@ -44,6 +44,13 @@ from pydantic import BaseModel, Field
 
 import re
 
+credentials = {
+    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_API_ENDPOINT', ''),
+    'AZURE_OPENAI_API_KEY': os.getenv('AZURE_OPENAI_API_KEY', ''),
+    'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION', ''),
+    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
+}
+
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
@@ -300,6 +307,8 @@ class JBEngine(PwRStudioEngine):
             dsl_obj = json.loads(test_dsl)
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
+            print(test_code)
+
             # load class via exec
             #gen_class_dict = {}
             #exec(test_code, globals(), gen_class_dict)
@@ -333,7 +342,7 @@ class JBEngine(PwRStudioEngine):
 
             input_parts = get_input_parts(user_input)
             for inp in input_parts:
-                state = tclz.run_machine(fsm_callback, inp, None, {}, state)
+                state = tclz.run_machine(fsm_callback, inp, None, credentials, state)
 
             self._project.representations["fsm_state"].text = json.dumps(state)
 

@@ -166,7 +166,7 @@ class CodeGen:
         """
         return method_code
 
-    def generate_on_enter_logic(self, task, validation_expression, should_validate=False):
+    def generate_on_enter_logic(self, task, validation_expression, should_validate=True):
         logic_state = f"{task['name']}_logic"
         options = task.get("options", None)
         method_code = f"""
@@ -227,7 +227,7 @@ class CodeGen:
                     )
 
                 validation = self.variables[task["write_variable"]]["validation"]
-                should_validate = task["should_validate"] if "should_validate" in task else False
+                should_validate = task["should_validate"] if "should_validate" in task else True
 
                 self.validation_methods.append(
                     (method_name, task["write_variable"], validation)
@@ -488,7 +488,7 @@ class {self.fsm_class_name}(AbstractFSM):
                 self.code += self.generate_on_enter_input(method["state"])
             elif method["type"] == "logic":
                 self.code += self.generate_on_enter_logic(
-                    method["state"], method["validation_expression"], method.get("should_validate", False)
+                    method["state"], method["validation_expression"], method.get("should_validate", True)
                 )
             elif method["type"] == "condition":
                 self.code += self.generate_on_enter_condition(method["state"])
