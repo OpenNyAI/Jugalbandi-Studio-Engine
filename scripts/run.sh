@@ -6,7 +6,7 @@ JB_ENGINE_VERSION=0.0.1
 
 # Process command-line arguments
 while getopts 'e:v:-:' flag; do
-  echo "I am inside the while loop"
+  echo "Inside Jugalbandi Manager Configuration for WSL2"
   case "${flag}" in
     e) env_file="${OPTARG}" ;;
     v) JB_ENGINE_VERSION="${OPTARG}" ;;
@@ -24,22 +24,21 @@ while getopts 'e:v:-:' flag; do
        exit 1 ;;
   esac
 done
-echo "I am outside the while loop"
 
 # Remove processed options from the arguments list
 shift $((OPTIND -1))
 
-# # Additional build steps if needed
-# cd ../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
-# cd -
+# Additional build steps if needed
+cd ../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
+cd -
 
-# cd ../PwR-NL2DSL/ && poetry install && poetry build
-# cd -
-# cp ../PwR-NL2DSL/dist/*.whl ./server/dist  
+cd ../PwR-NL2DSL/ && poetry install && poetry build
+cd -
+cp ../PwR-NL2DSL/dist/*.whl ./server/dist  
 
-# cd ../PwR-Studio/lib && poetry install && poetry build
-# cd -
-# cp ../PwR-Studio/lib/dist/*.whl ./server/dist  
+cd ../PwR-Studio/lib && poetry install && poetry build
+cd -
+cp ../PwR-Studio/lib/dist/*.whl ./server/dist  
 
 
 # Create necessary directories
@@ -48,6 +47,7 @@ mkdir -p ./server/dist
 
 # Determine host settings based on environment (WSL or Docker)
 if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then
+    echo "Inside PwR Studio Configuration for WSL2"
     JBHOST=$(hostname -I | awk '{print $1}')
     PWRHOST=$JBHOST
     export JBHOST PWRHOST
