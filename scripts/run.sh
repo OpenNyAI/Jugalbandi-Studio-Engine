@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Default environment file
+env_file=".env-dev"
+JB_ENGINE_VERSION=0.0.1
+
+# Process command-line arguments
+while getopts 'e:v:-:' flag; do
+  echo "I am inside the while loop"
+  case "${flag}" in
+    e) env_file="${OPTARG}" ;;
+    v) JB_ENGINE_VERSION="${OPTARG}" ;;
+    -) case "${OPTARG}" in
+            stage)
+                stage=true
+                ;;
+            *)
+                echo "Unknown option --${OPTARG}" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    *) echo "Usage: $0 [-e env_file] [-v JB_ENGINE_VERSION] [service1 service2 ...]"
+       exit 1 ;;
+  esac
+done
+echo "I am outside the while loop"
+
+# Remove processed options from the arguments list
+shift $((OPTIND -1))
+
+# # Additional build steps if needed
+# cd ../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
+# cd -
+
+# cd ../PwR-NL2DSL/ && poetry install && poetry build
+# cd -
+# cp ../PwR-NL2DSL/dist/*.whl ./server/dist  
+
+# cd ../PwR-Studio/lib && poetry install && poetry build
+# cd -
+# cp ../PwR-Studio/lib/dist/*.whl ./server/dist  
+
+
+# Create necessary directories
+# mkdir -p ./media
+mkdir -p ./server/dist
+
+# Determine host settings based on environment (WSL or Docker)
+if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then
+    JBHOST=$(hostname -I | awk '{print $1}')
+    PWRHOST=$JBHOST
+    export JBHOST PWRHOST
+    export JB_KAFKA_BROKER="${JBHOST}:9092"
+    export JB_POSTGRES_DATABASE_HOST="${JBHOST}"
+    export PWR_SERVER_HOST="http://${PWRHOST}:3000"
+    export PWR_KAFKA_BROKER="${PWRHOST}:9092"
+    export POSTGRES_DATABASE_HOST="${PWRHOST}"
+    echo "Setting hosts by WSL2 IP: ${JBHOST}"
+else
+    export JBHOST="localhost"
+    export JB_KAFKA_BROKER="kafka:9092"
+    export JB_POSTGRES_DATABASE_HOST="postgres"
+    export PWRHOST="localhost"
+    export PWR_SERVER_HOST="http://api:3000"
+    export PWR_KAFKA_BROKER="kafka:9092"
+    export POSTGRES_DATABASE_HOST="localhost"
+    echo "Setting hosts by docker-compose service names"
+fi
+
+# Set other variables
+export JB_API_SERVER_HOST="http://localhost:8000"
+export JB_ENGINE_VERSION
+
+# Build and run Docker Compose based on staging or development environment
+if [ -n "$stage" ]; then
+  for arg in "$@"; do
+    if [[ "$arg" == "frontend" ]]; then
+        docker compose build "$arg" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
+        break
+    fi
+  done
+  echo "Running docker-compose with existing images"
+  docker compose --env-file "$env_file" -f "docker-compose.yml" -f docker-compose.stage.yml up "$@"
+else
+  echo "Building and running docker-compose"
+  docker compose build "$@" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
+  docker compose --env-file "$env_file" up "$@"
+fi
+
