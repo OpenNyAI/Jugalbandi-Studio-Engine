@@ -2,6 +2,7 @@ import json
 from math import e
 import re
 import ast
+
 # json_data should have the following structure
 # {
 #     "fsm_name": "CarDealerBot",
@@ -424,8 +425,9 @@ import re
         pydantic_code = "\n".join(["    " + l for l in pydantic_code.split("\n")])
 
         self.code += f"""
-class {self.fsm_class_name}(AbstractFSM):
 {pydantic_code}
+
+class {self.fsm_class_name}(AbstractFSM):
     states = {self.states}
     transitions = {self.transitions}
     conditions = {list(self.conditions)}
