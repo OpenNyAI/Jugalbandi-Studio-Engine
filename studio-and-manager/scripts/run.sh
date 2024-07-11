@@ -68,19 +68,5 @@ fi
 export JB_API_SERVER_HOST="http://localhost:8000"
 export JB_ENGINE_VERSION
 
-# Build and run Docker Compose based on staging or development environment
-if [ -n "$stage" ]; then
-  for arg in "$@"; do
-    if [[ "$arg" == "frontend" ]]; then
-        docker compose build "$arg" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
-        break
-    fi
-  done
-  echo "Running docker-compose with existing images"
-  docker compose --env-file "$env_file" -f "docker-compose.yml" -f docker-compose.stage.yml up "$@"
-else
-  echo "Building and running docker-compose"
-  docker compose build "$@" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
-  docker compose --env-file "$env_file" up "$@"
-fi
-
+docker compose build "$@" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
+docker compose --env-file "$env_file" up "$@"
