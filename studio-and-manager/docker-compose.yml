@@ -1,13 +1,5 @@
 services:
   # Jugalbandi Manager
-  # api:
-  #   image: opennyaiin/jugalbandi-manager:api-latest
-  # channel:
-  #   image: opennyaiin/jugalbandi-manager:channel-latest
-  # language:
-  #   image: opennyaiin/jugalbandi-manager:language-latest
-  # flow:
-  #   image: opennyaiin/jugalbandi-manager:flow-latest
   api:
     build:
       context: ../../Jugalbandi-Manager
@@ -128,34 +120,6 @@ services:
     volumes:
       - ./media:/mnt/jb_files
 
-  # retriever:
-  #   build:
-  #     context: ../Jugalbandi-Manager
-  #     dockerfile: ./retriever/Dockerfile
-  #   environment:
-  #     - KAFKA_BROKER=${KAFKA_BROKER}
-  #     - KAFKA_USE_SASL=${KAFKA_USE_SASL}
-  #     - KAFKA_RAG_TOPIC=${KAFKA_RAG_TOPIC}
-  #     - KAFKA_FLOW_TOPIC=${KAFKA_FLOW_TOPIC}
-  #     - KAFKA_PRODUCER_USERNAME=${KAFKA_PRODUCER_USERNAME}
-  #     - KAFKA_PRODUCER_PASSWORD=${KAFKA_PRODUCER_PASSWORD}
-  #     - KAFKA_CONSUMER_USERNAME=${KAFKA_CONSUMER_USERNAME}
-  #     - KAFKA_CONSUMER_PASSWORD=${KAFKA_CONSUMER_PASSWORD}
-  #     - POSTGRES_DATABASE_NAME=${MANAGER_POSTGRES_DATABASE_NAME}
-  #     - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
-  #     - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
-  #     - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
-  #     - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
-  #     - OPENAI_API_TYPE=${OPENAI_API_TYPE}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-  #     - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-  #     - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
-  #   depends_on:
-  #     - kafka
-  #     - postgres
-
-
   frontend:
     build:
       context: ../../Jugalbandi-Manager
@@ -164,38 +128,6 @@ services:
       - "4179:4179"
     environment:
       - VITE_SERVER_HOST=${SERVER_HOST}
-    # indexer:
-    #   build:
-    #     context: ../Jugalbandi-Manager
-    #     dockerfile: ./indexer/Dockerfile
-    #   environment:
-    #     - KAFKA_BROKER=${KAFKA_BROKER}
-    #     - KAFKA_USE_SASL=${KAFKA_USE_SASL}
-    #     - KAFKA_CONSUMER_TOPIC=indexer
-    #     - KAFKA_PRODUCER_FLOW_TOPIC=flow
-    #     - POSTGRES_DATABASE_NAME=${MANAGER_POSTGRES_DATABASE_NAME}
-    #     - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
-    #     - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
-    #     - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
-    #     - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
-    #     - OPENAI_API_TYPE=${OPENAI_API_TYPE}
-    #     - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
-    #     - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-    #     - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-    #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-    #     - DOCUMENT_LOCAL_STORAGE_PATH=./data
-    #   depends_on:
-    #     kafka:
-    #       condition: service_healthy
-    #     postgres:
-    #       condition: service_healthy
-    # retriever:
-    # image: opennyaiin/jugalbandi-manager:retriever-latest
-
-
-
-
-
     # PwR Studio
   server:
     build:
