@@ -1,8 +1,16 @@
 services:
   # Jugalbandi Manager
+  # api:
+  #   image: opennyaiin/jugalbandi-manager:api-latest
+  # channel:
+  #   image: opennyaiin/jugalbandi-manager:channel-latest
+  # language:
+  #   image: opennyaiin/jugalbandi-manager:language-latest
+  # flow:
+  #   image: opennyaiin/jugalbandi-manager:flow-latest
   api:
     build:
-      context: ../Jugalbandi-Manager
+      context: ../../Jugalbandi-Manager
       dockerfile: ./api/Dockerfile
     ports:
       - "8000:8000"
@@ -25,7 +33,7 @@ services:
       - postgres
   language:
     build:
-      context: ../Jugalbandi-Manager
+      context: ../../Jugalbandi-Manager
       dockerfile: ./language/Dockerfile
     environment:
       - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
@@ -61,7 +69,7 @@ services:
       - ./media:/mnt/jb_files
   flow:
     build:
-      context: ../Jugalbandi-Manager
+      context: ../../Jugalbandi-Manager
       dockerfile: ./flow/Dockerfile
     environment:
       - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
@@ -88,58 +96,9 @@ services:
       - postgres
     volumes:
       - ./media:/mnt/jb_files
-  indexer:
-    build:
-      context: ../Jugalbandi-Manager
-      dockerfile: ./indexer/Dockerfile
-    environment:
-      - KAFKA_BROKER=${KAFKA_BROKER}
-      - KAFKA_USE_SASL=${KAFKA_USE_SASL}
-      - KAFKA_CONSUMER_TOPIC=indexer
-      - KAFKA_PRODUCER_FLOW_TOPIC=flow
-      - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
-      - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
-      - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
-      - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
-      - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
-      - OPENAI_API_TYPE=${OPENAI_API_TYPE}
-      - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DOCUMENT_LOCAL_STORAGE_PATH=./data
-    depends_on:
-      - kafka
-      - postgres
-  retriever:
-    build:
-      context: ../Jugalbandi-Manager
-      dockerfile: ./retriever/Dockerfile
-    environment:
-      - KAFKA_BROKER=${KAFKA_BROKER}
-      - KAFKA_USE_SASL=${KAFKA_USE_SASL}
-      - KAFKA_RAG_TOPIC=${KAFKA_RAG_TOPIC}
-      - KAFKA_FLOW_TOPIC=${KAFKA_FLOW_TOPIC}
-      - KAFKA_PRODUCER_USERNAME=${KAFKA_PRODUCER_USERNAME}
-      - KAFKA_PRODUCER_PASSWORD=${KAFKA_PRODUCER_PASSWORD}
-      - KAFKA_CONSUMER_USERNAME=${KAFKA_CONSUMER_USERNAME}
-      - KAFKA_CONSUMER_PASSWORD=${KAFKA_CONSUMER_PASSWORD}
-      - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
-      - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
-      - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
-      - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
-      - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
-      - OPENAI_API_TYPE=${OPENAI_API_TYPE}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
-    depends_on:
-      - kafka
-      - postgres
   channel:
     build:
-      context: ../Jugalbandi-Manager
+      context: ../../Jugalbandi-Manager
       dockerfile: ./channel/Dockerfile
     environment:
       - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
@@ -168,59 +127,102 @@ services:
       - postgres
     volumes:
       - ./media:/mnt/jb_files
+  
+  # indexer:
+  #   build:
+  #     context: ../Jugalbandi-Manager
+  #     dockerfile: ./indexer/Dockerfile
+  #   environment:
+  #     - KAFKA_BROKER=${KAFKA_BROKER}
+  #     - KAFKA_USE_SASL=${KAFKA_USE_SASL}
+  #     - KAFKA_CONSUMER_TOPIC=indexer
+  #     - KAFKA_PRODUCER_FLOW_TOPIC=flow
+  #     - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
+  #     - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
+  #     - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
+  #     - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
+  #     - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
+  #     - OPENAI_API_TYPE=${OPENAI_API_TYPE}
+  #     - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
+  #     - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+  #     - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+  #     - DOCUMENT_LOCAL_STORAGE_PATH=./data
+  #   depends_on:
+  #     - kafka
+  #     - postgres
+  # retriever:
+  #   build:
+  #     context: ../Jugalbandi-Manager
+  #     dockerfile: ./retriever/Dockerfile
+  #   environment:
+  #     - KAFKA_BROKER=${KAFKA_BROKER}
+  #     - KAFKA_USE_SASL=${KAFKA_USE_SASL}
+  #     - KAFKA_RAG_TOPIC=${KAFKA_RAG_TOPIC}
+  #     - KAFKA_FLOW_TOPIC=${KAFKA_FLOW_TOPIC}
+  #     - KAFKA_PRODUCER_USERNAME=${KAFKA_PRODUCER_USERNAME}
+  #     - KAFKA_PRODUCER_PASSWORD=${KAFKA_PRODUCER_PASSWORD}
+  #     - KAFKA_CONSUMER_USERNAME=${KAFKA_CONSUMER_USERNAME}
+  #     - KAFKA_CONSUMER_PASSWORD=${KAFKA_CONSUMER_PASSWORD}
+  #     - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
+  #     - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
+  #     - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
+  #     - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
+  #     - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
+  #     - OPENAI_API_TYPE=${OPENAI_API_TYPE}
+  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+  #     - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+  #     - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+  #     - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
+  #   depends_on:
+  #     - kafka
+  #     - postgres
+  
+
   frontend:
     build:
-      context: ../Jugalbandi-Manager
+      context: ../../Jugalbandi-Manager
       dockerfile: ./frontend/Dockerfile
     ports:
       - "4179:4179"
     environment:
       - VITE_SERVER_HOST=${SERVER_HOST}
-    # depends_on:
-    #   - api
-  
-  postgres:
-    image: ankane/pgvector
-    ports:
-      - "5432:5432"
-    environment:
-      #   POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    #   POSTGRES_DB: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./combined_dump.sql:/docker-entrypoint-initdb.d/dump.sql
-  postgres-adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
-  metabase:
-    image: metabase/metabase:latest
-    ports:
-      - "9000:9000"
-  kafka:
-    image: docker.io/bitnami/kafka:3.6
-    ports:
-      - "9092:19092"
-    volumes:
-      - "kafka_data:/bitnami"
-      - ./scripts/create-all-topics.sh:/usr/bin/create-topics.sh
-    command: "sh -c './run.sh & /usr/bin/create-topics.sh && tail -f /dev/null'"
-    environment:
-      - KAFKA_CFG_NODE_ID=0
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-      # Listeners
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://${JBHOST}:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-  # PwR Studio
+    # indexer:
+    #   build:
+    #     context: ../Jugalbandi-Manager
+    #     dockerfile: ./indexer/Dockerfile
+    #   environment:
+    #     - KAFKA_BROKER=${KAFKA_BROKER}
+    #     - KAFKA_USE_SASL=${KAFKA_USE_SASL}
+    #     - KAFKA_CONSUMER_TOPIC=indexer
+    #     - KAFKA_PRODUCER_FLOW_TOPIC=flow
+    #     - POSTGRES_DATABASE_NAME=${POSTGRES_DATABASE_NAME}
+    #     - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
+    #     - POSTGRES_DATABASE_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
+    #     - POSTGRES_DATABASE_HOST=${POSTGRES_DATABASE_HOST}
+    #     - POSTGRES_DATABASE_PORT=${POSTGRES_DATABASE_PORT}
+    #     - OPENAI_API_TYPE=${OPENAI_API_TYPE}
+    #     - AZURE_DEPLOYMENT_NAME=${AZURE_DEPLOYMENT_NAME}
+    #     - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+    #     - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+    #     - OPENAI_API_KEY=${OPENAI_API_KEY}
+    #     - DOCUMENT_LOCAL_STORAGE_PATH=./data
+    #   depends_on:
+    #     kafka:
+    #       condition: service_healthy
+    #     postgres:
+    #       condition: service_healthy
+    # retriever:
+    # image: opennyaiin/jugalbandi-manager:retriever-latest
+
+
+
+
+
+    # PwR Studio
   server:
     build:
-      context: ../PwR-Studio
+      context: ../../PwR-Studio
       dockerfile: ./server/Dockerfile
     command: uvicorn app.main:app --workers 1 --host 0.0.0.0 --port 3000
     restart: unless-stopped
@@ -251,11 +253,11 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       # Add all Azure OpenAI keys
     depends_on:
-      - postgres
       - kafka
+      - postgres
   studio:
     build:
-      context: ../PwR-Studio
+      context: ../../PwR-Studio
       dockerfile: ./studio/Dockerfile
     restart: unless-stopped
     environment:
@@ -287,6 +289,50 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
     depends_on:
       - kafka
+        
+
+
+  # Postgres and Kafka
+  postgres:
+    image: ankane/pgvector
+    ports:
+      - "5432:5432"
+    environment:
+      #   POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    #   POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./combined_dump.sql:/docker-entrypoint-initdb.d/dump.sql
+  
+  postgres-adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  # metabase:
+  #   image: metabase/metabase:latest
+  #   ports:
+  #     - "9000:9000"
+  kafka:
+    image: docker.io/bitnami/kafka:3.6
+    ports:
+      - "9092:19092"
+    volumes:
+      - "kafka_data:/bitnami"
+      - ./scripts/create-all-topics.sh:/usr/bin/create-topics.sh
+    command: "sh -c './run.sh & /usr/bin/create-topics.sh && tail -f /dev/null'"
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://${JBHOST}:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    
 
 volumes:
   kafka_data:

@@ -29,16 +29,16 @@ done
 shift $((OPTIND -1))
 
 # Additional build steps if needed
-cd ../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
+cd ../../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
 cd -
 
-cd ../PwR-NL2DSL/ && poetry install && poetry build
+cd ../../PwR-NL2DSL/ && poetry install && poetry build
 cd -
-cp ../PwR-NL2DSL/dist/*.whl ./server/dist  
+cp ../../PwR-NL2DSL/dist/*.whl ./server/dist  
 
-cd ../PwR-Studio/lib && poetry install && poetry build
+cd ../../PwR-Studio/lib && poetry install && poetry build
 cd -
-cp ../PwR-Studio/lib/dist/*.whl ./server/dist  
+cp ../../PwR-Studio/lib/dist/*.whl ./server/dist  
 
 
 # Create necessary directories
