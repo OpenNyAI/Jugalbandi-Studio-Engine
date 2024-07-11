@@ -49,21 +49,17 @@ mkdir -p ./server/dist
 if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then
     echo "Inside PwR Studio Configuration for WSL2"
     JBHOST=$(hostname -I | awk '{print $1}')
-    PWRHOST=$JBHOST
-    export JBHOST PWRHOST
-    export JB_KAFKA_BROKER="${JBHOST}:9092"
-    export JB_POSTGRES_DATABASE_HOST="${JBHOST}"
-    export PWR_SERVER_HOST="http://${PWRHOST}:3000"
-    export PWR_KAFKA_BROKER="${PWRHOST}:9092"
-    export POSTGRES_DATABASE_HOST="${PWRHOST}"
+    export JBHOST
+    export KAFKA_BROKER="${JBHOST}:9092"
+    export POSTGRES_DATABASE_HOST="${JBHOST}"
+    export PWR_SERVER_HOST="http://${JBHOST}:3000"
+    export POSTGRES_DATABASE_HOST="${JBHOST}"
     echo "Setting hosts by WSL2 IP: ${JBHOST}"
 else
     export JBHOST="localhost"
-    export JB_KAFKA_BROKER="kafka:9092"
-    export JB_POSTGRES_DATABASE_HOST="postgres"
-    export PWRHOST="localhost"
+    export KAFKA_BROKER="kafka:9092"
+    export POSTGRES_DATABASE_HOST="postgres"
     export PWR_SERVER_HOST="http://api:3000"
-    export PWR_KAFKA_BROKER="kafka:9092"
     export POSTGRES_DATABASE_HOST="localhost"
     echo "Setting hosts by docker-compose service names"
 fi
