@@ -16,11 +16,11 @@ EOSQL
 echo "jbmanager database created"
 
 # Import jbstudio_dump.sql into jbstudio database
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname jbstudio -f /docker-entrypoint-initdb.d/jbstudio_dump.sql
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname jbstudio -f /mnt/init/jbstudio_dump.sql
 
 echo "jbstudio_dump.sql imported into jbstudio database"
 
 # Import jbmanager_dump.sql into jbmanager database
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname jbmanager -f /docker-entrypoint-initdb.d/jbmanager_dump.sql
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname jbmanager -f /mnt/init/jbmanager_dump.sql
 
 echo "jbmanager_dump.sql imported into jbmanager database"

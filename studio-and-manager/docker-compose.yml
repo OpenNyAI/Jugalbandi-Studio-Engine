@@ -211,8 +211,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh
-      - ./jbmanager_dump.sql:/docker-entrypoint-initdb.d/jbmanager_dump.sql
-      - ./jbstudio_dump.sql:/docker-entrypoint-initdb.d/jbstudio_dump.sql
+      - ./jbmanager_dump.sql:/mnt/init/jbmanager_dump.sql
+      - ./jbstudio_dump.sql:/mnt/init/jbstudio_dump.sql
 
   postgres-adminer:
     image: adminer
