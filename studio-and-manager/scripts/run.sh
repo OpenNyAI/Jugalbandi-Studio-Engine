@@ -50,7 +50,7 @@ if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then
     echo "Inside PwR Studio Configuration for WSL2"
     JBHOST=$(hostname -I | awk '{print $1}')
     export JBHOST
-    export KAFKA_BROKER="${JBHOST}:9092"
+    export KAFKA_BROKER="${JBHOST}"
     export POSTGRES_DATABASE_HOST="${JBHOST}"
     export PWR_SERVER_HOST="http://${JBHOST}:3000"
     export POSTGRES_DATABASE_HOST="${JBHOST}"
@@ -69,4 +69,6 @@ export JB_API_SERVER_HOST="http://localhost:8000"
 export JB_ENGINE_VERSION
 
 docker compose build "$@" --build-arg VITE_SERVER_HOST="$JB_API_SERVER_HOST"
+# At once place we are using JB_API_SERVER_HOST and at another place we are using from .env-dev
+# Here we are not telling it which frontend to build
 docker compose --env-file "$env_file" up "$@"
