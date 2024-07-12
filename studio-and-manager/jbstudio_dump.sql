@@ -2,6 +2,13 @@
 -- PostgreSQL database dump
 --
 
+
+-- jbstudio_dump.sql
+CREATE DATABASE jbstudio;
+\c jbstudio
+-- Your original SQL dump contents here
+
+
 -- Dumped from database version 16.1 (Debian 16.1-1.pgdg120+1)
 -- Dumped by pg_dump version 16.1 (Debian 16.1-1.pgdg120+1)
 
