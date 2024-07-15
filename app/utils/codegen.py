@@ -189,6 +189,17 @@ class CodeGen:
                     return node
 
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
+        # if correct expression has single = then it is assignment
+        # else return the expression as it is
+        if "=" in correct_expr:
+            correct_expr = """
+            {correct_expr}
+            return self.variables.{str(task['write_variable'])}
+"""
+        else:
+            correct_expr = f"""
+            return {correct_expr}
+"""
 
         method_code = f"""
     def on_enter_{logic_state}(self):
@@ -196,7 +207,6 @@ class CodeGen:
         expression = "{task['operation']}"
         def validation(*args):
             {correct_expr}
-            return self.variables.{str(task['write_variable'])}
         self._on_enter_assign(variable_name, validation)
     """
         return method_code
@@ -422,7 +432,7 @@ import re
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
-        pydantic_code = "\n".join(["    " + l for l in pydantic_code.split("\n")])
+        pydantic_code = "\n".join(["" + l for l in pydantic_code.split("\n")])
 
         self.code += f"""
 {pydantic_code}
