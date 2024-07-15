@@ -12,7 +12,6 @@ from typing import List
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-
 from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
@@ -95,7 +94,6 @@ class JBEngine(PwRStudioEngine):
         chat_history = [
             Message(type=x.type, content=x.message) for x in chat_history_strings
         ]
-
         try:
             dsl = json.loads(self._project.representations["dsl"].text)
         except Exception as e:
@@ -172,7 +170,7 @@ class JBEngine(PwRStudioEngine):
                 status_update_callback(f"Generating the final program ...")
 
         status_update_callback(f"Generating a plan to update the program ...")
-
+        old_nlr = generate_nlr(dsl)
         nl2dsl = NL2DSL(
             utterance=text,
             dsl=dsl,
@@ -183,7 +181,8 @@ class JBEngine(PwRStudioEngine):
 
         nl2dsl.nl2dsl()
 
-        errors = nl2dsl.validate_dsl()
+        issues = nl2dsl.validate_dsl()
+
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         feedback = generate_feedback(
@@ -192,7 +191,8 @@ class JBEngine(PwRStudioEngine):
                 text,
             ],
             nlr,
-            errors,
+            issues,
+            old_nlr,
             debug=True,
         )
         chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
@@ -212,10 +212,10 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": len(errors),
-            "warnings": 0,
-            "optimizations": 0,
-            "botExperience": "80%",
+            "errors": len(issues["errors"]),
+            "warnings": len(issues["warnings"]),
+            "optimizations": 0,  # hard coded for now
+            "botExperience": "80%",  # hard coded for now
         }
         # TODO fix this at db/contract level
         await self._progress(
@@ -245,7 +245,7 @@ class JBEngine(PwRStudioEngine):
         )
 
         # comment out for now
-        # nl2dsl.validate_dsl()
+        issues = nl2dsl.validate_dsl()
 
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         nlr = generate_nlr(nl2dsl.dsl)
@@ -273,16 +273,14 @@ class JBEngine(PwRStudioEngine):
             self._project.representations["code"].text = code
 
         program_state = {
-            "errors": 0,
-            "warnings": 0,
-            "optimizations": 0,
-            "botExperience": "80%",
+            "errors": issues["errors"],
+            "warnings": issues["warnings"],
+            "optimizations": 0,  # hard coded for now
+            "botExperience": "80%",  # hard coded for now
         }
-        # await self._progress(
-        #     Response(
-        #         # type="dsl_state",
-        #         message=json.dumps(program_state)
-        #     ))
+        await self._progress(
+            Response(type="dsl_state", message=json.dumps(program_state))
+        )
 
         await self._progress(
             Response(
