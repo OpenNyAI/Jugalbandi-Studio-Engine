@@ -1,7 +1,33 @@
 from .llm import llm, sm, um
 
 
-def generate_feedback(user_history, dsl_desc, errors, **kwargs):
+def generate_diff(old_nlr, new_nlr, **kwargs):
+    template_str = f"""You will be given two versions of a program plan. You have to identify the changes made in the new plan compared to the old plan. 
+The program plan has been updated.
+Here is the older plan: {old_nlr}
+
+Here is the updated plan: {new_nlr}
+
+Write one point on the steps that have been completed or updated in the new plan. Return in atmost 10 words. Think step by step. Be clear and concise.
+"""
+    result = llm(
+        [
+            sm(
+                "You are a developer bot that is helping users to understand the changes in the program plan."
+            ),
+            um(template_str),
+        ],
+    )
+    if result and len(result) > 0:
+        return result
+    else:
+        return "The program has been updated as per instruction"
+
+
+def generate_future_steps(user_history, dsl_desc, errors_dict, **kwargs):
+    errors = errors_dict.get("errors", [])
+    errors.extend(errors_dict.get("warnings", []))
+    errors.extend(errors_dict.get("info", []))
 
     if not user_history or len(user_history) < 1:
         return ""
@@ -41,4 +67,10 @@ Return at most 3 bullet points. Each bullet point should be in simple english an
     if result and len(result) > 0:
         return f"Here are some next steps that can be tried:\n {result}"
     else:
-        return "The program has been updated as per instruction"
+        return ""
+
+
+def generate_feedback(user_history, dsl_desc, errors, old_nlr, **kwargs):
+    diff = generate_diff(old_nlr, dsl_desc)
+    feedback = generate_future_steps(user_history, dsl_desc, errors, **kwargs)
+    return f"{diff}\n{feedback}"
