@@ -117,7 +117,7 @@ services:
       context: ../../Jugalbandi-Manager
       dockerfile: ./frontend/Dockerfile
     ports:
-      - "4179:4179"
+      - "4179:4173"
     environment:
       - VITE_SERVER_HOST=${MANAGER_SERVER_HOST}
   # PwR Studio
@@ -223,6 +223,12 @@ services:
       - ./scripts/create-all-topics.sh:/usr/bin/create-topics.sh
     command: "sh -c './run.sh & /usr/bin/create-topics.sh && tail -f /dev/null'"
     environment:
+      - KAFKA_FLOW_TOPIC=${KAFKA_FLOW_TOPIC}
+      - KAFKA_CHANNEL_TOPIC=${KAFKA_CHANNEL_TOPIC}
+      - KAFKA_LANGUAGE_TOPIC=${KAFKA_LANGUAGE_TOPIC}
+      - KAFKA_ENGINE_TOPIC=${KAFKA_ENGINE_TOPIC}
+      - KAFKA_RETRIEVER_TOPIC=${KAFKA_RETRIEVER_TOPIC}
+      - KAFKA_INDEXER_TOPIC=${KAFKA_INDEXER_TOPIC}
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
