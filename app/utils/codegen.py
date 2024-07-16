@@ -523,9 +523,3 @@ class {self.fsm_class_name}(AbstractFSM):
         """
         return self.code
 
-
-if __name__ == "__main__":
-    fsm = CodeGen.from_json_file("fsm.json")
-    code = fsm.generate_fsm_code()
-    with open("fsm.py", "w") as f:
-        f.write(code)
