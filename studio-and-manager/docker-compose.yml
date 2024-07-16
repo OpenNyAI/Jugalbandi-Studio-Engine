@@ -1,9 +1,7 @@
 services:
   # Jugalbandi Manager
   api:
-    build:
-      context: ../../Jugalbandi-Manager
-      dockerfile: ./api/Dockerfile
+    image: opennyaiin/jugalbandi-manager:api-latest
     ports:
       - "8000:8000"
     environment:
@@ -24,9 +22,7 @@ services:
       - kafka
       - postgres
   language:
-    build:
-      context: ../../Jugalbandi-Manager
-      dockerfile: ./language/Dockerfile
+    image: opennyaiin/jugalbandi-manager:language-latest
     environment:
       - POSTGRES_DATABASE_NAME=${MANAGER_POSTGRES_DATABASE_NAME}
       - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
@@ -60,9 +56,7 @@ services:
     volumes:
       - ./media:/mnt/jb_files
   flow:
-    build:
-      context: ../../Jugalbandi-Manager
-      dockerfile: ./flow/Dockerfile
+    image: opennyaiin/jugalbandi-manager:flow-latest
     environment:
       - POSTGRES_DATABASE_NAME=${MANAGER_POSTGRES_DATABASE_NAME}
       - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
@@ -89,9 +83,7 @@ services:
     volumes:
       - ./media:/mnt/jb_files
   channel:
-    build:
-      context: ../../Jugalbandi-Manager
-      dockerfile: ./channel/Dockerfile
+    image: opennyaiin/jugalbandi-manager:channel-latest
     environment:
       - POSTGRES_DATABASE_NAME=${MANAGER_POSTGRES_DATABASE_NAME}
       - POSTGRES_DATABASE_USERNAME=${POSTGRES_DATABASE_USERNAME}
