@@ -50,7 +50,7 @@
         "DB_USER": {
             "value": "jbstudio"
         },
-        "environmentVariable2": {
+        "DB_PASSWORD": {
             "value": ""
         },
         "DB_NAME": {

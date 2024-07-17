@@ -67,7 +67,7 @@
         "DB_USER": {
             "type": "string"
         },
-        "environmentVariable2": {
+        "DB_PASSWORD": {
             "type": "secureString"
         },
         "DB_NAME": {
@@ -175,7 +175,7 @@
                                 },
                                 {
                                     "name": "DB_PASSWORD",
-                                    "secureValue": "[parameters('environmentVariable2')]"
+                                    "secureValue": "[parameters('DB_PASSWORD')]"
                                 },
                                 {
                                     "name": "DB_NAME",
