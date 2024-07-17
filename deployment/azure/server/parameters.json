@@ -44,67 +44,67 @@
         "dbConnectionString": {
             "value": ""
         },
-        "environmentVariable0": {
+        "DB_HOST": {
             "value": "jbstudio.postgres.database.azure.com"
         },
-        "environmentVariable1": {
+        "DB_USER": {
             "value": "jbstudio"
         },
         "environmentVariable2": {
             "value": ""
         },
-        "environmentVariable3": {
+        "DB_NAME": {
             "value": "jbstudio"
         },
-        "environmentVariable4": {
+        "DB_PORT": {
             "value": "5432"
         },
-        "environmentVariable5": {
+        "AAD_APP_CLIENT_ID": {
             "value": ""
         },
-        "environmentVariable6": {
+        "AAD_APP_TENANT_ID": {
             "value": ""
         },
-        "environmentVariable7": {
+        "AAD_APP_REDIRECT_URI": {
             "value": "https://jbstudio.z29.web.core.windows.net/"
         },
-        "environmentVariable8": {
+        "ADD_APP_SCOPE_URI": {
             "value": ""
         },
-        "environmentVariable9": {
+        "ISSUER": {
             "value": "https://sts.windows.net/"
         },
-        "environmentVariable10": {
+        "KAFKA_BROKER": {
             "value": "jbstudio.servicebus.windows.net:9093"
         },
-        "environmentVariable11": {
+        "KAFKA_USE_SASL": {
             "value": "true"
         },
-        "environmentVariable12": {
+        "KAFKA_ENGINE_TOPIC": {
             "value": "jb"
         },
-        "environmentVariable13": {
+        "KAFKA_PRODUCER_USERNAME": {
             "value": "$ConnectionString"
         },
-        "environmentVariable14": {
+        "DB_USER4": {
             "value": ""
         },
-        "environmentVariable15": {
+        "KAFKA_CONSUMER_USERNAME": {
             "value": "$ConnectionString"
         },
-        "environmentVariable16": {
+        "DB_USER6": {
             "value": ""
         },
-        "environmentVariable17": {
+        "DB_USER7": {
             "value": "https://jbstudio.z29.web.core.windows.net/"
         },
-        "environmentVariable18": {
+        "AZURE_OPENAI_ENDPOINT": {
             "value": ""
         },
-        "environmentVariable19": {
+        "AZURE_OPENAI_API_VERSION": {
             "value": "2023-12-01-preview"
         },
-        "environmentVariable20": {
+        "AZURE_OPENAI_DEPLOYMENT_NAME": {
             "value": "gpt-4"
         },
         "ipAddressType": {

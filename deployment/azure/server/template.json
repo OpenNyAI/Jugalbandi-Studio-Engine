@@ -61,67 +61,67 @@
         "dbConnectionString": {
             "type": "string"
         },
-        "environmentVariable0": {
+        "DB_HOST": {
             "type": "string"
         },
-        "environmentVariable1": {
+        "DB_USER": {
             "type": "string"
         },
         "environmentVariable2": {
             "type": "secureString"
         },
-        "environmentVariable3": {
+        "DB_NAME": {
             "type": "string"
         },
-        "environmentVariable4": {
+        "DB_PORT": {
             "type": "string"
         },
-        "environmentVariable5": {
+        "AAD_APP_CLIENT_ID": {
             "type": "string"
         },
-        "environmentVariable6": {
+        "AAD_APP_TENANT_ID": {
             "type": "string"
         },
-        "environmentVariable7": {
+        "AAD_APP_REDIRECT_URI": {
             "type": "string"
         },
-        "environmentVariable8": {
+        "ADD_APP_SCOPE_URI": {
             "type": "string"
         },
-        "environmentVariable9": {
+        "ISSUER": {
             "type": "string"
         },
-        "environmentVariable10": {
+        "KAFKA_BROKER": {
             "type": "string"
         },
-        "environmentVariable11": {
+        "KAFKA_USE_SASL": {
             "type": "string"
         },
-        "environmentVariable12": {
+        "KAFKA_ENGINE_TOPIC": {
             "type": "string"
         },
-        "environmentVariable13": {
+        "KAFKA_PRODUCER_USERNAME": {
             "type": "string"
         },
-        "environmentVariable14": {
+        "DB_USER4": {
             "type": "secureString"
         },
-        "environmentVariable15": {
+        "KAFKA_CONSUMER_USERNAME": {
             "type": "string"
         },
-        "environmentVariable16": {
+        "DB_USER6": {
             "type": "secureString"
         },
-        "environmentVariable17": {
+        "DB_USER7": {
             "type": "secureString"
         },
-        "environmentVariable18": {
+        "AZURE_OPENAI_ENDPOINT": {
             "type": "string"
         },
-        "environmentVariable19": {
+        "AZURE_OPENAI_API_VERSION": {
             "type": "string"
         },
-        "environmentVariable20": {
+        "AZURE_OPENAI_DEPLOYMENT_NAME": {
             "type": "string"
         },
         "ipAddressType": {
@@ -167,11 +167,11 @@
                                 },
                                 {
                                     "name": "DB_HOST",
-                                    "value": "[parameters('environmentVariable0')]"
+                                    "value": "[parameters('DB_HOST')]"
                                 },
                                 {
                                     "name": "DB_USER",
-                                    "value": "[parameters('environmentVariable1')]"
+                                    "value": "[parameters('DB_USER')]"
                                 },
                                 {
                                     "name": "DB_PASSWORD",
@@ -179,75 +179,75 @@
                                 },
                                 {
                                     "name": "DB_NAME",
-                                    "value": "[parameters('environmentVariable3')]"
+                                    "value": "[parameters('DB_NAME')]"
                                 },
                                 {
                                     "name": "DB_PORT",
-                                    "value": "[parameters('environmentVariable4')]"
+                                    "value": "[parameters('DB_PORT')]"
                                 },
                                 {
                                     "name": "AAD_APP_CLIENT_ID",
-                                    "value": "[parameters('environmentVariable5')]"
+                                    "value": "[parameters('AAD_APP_CLIENT_ID')]"
                                 },
                                 {
                                     "name": "AAD_APP_TENANT_ID",
-                                    "value": "[parameters('environmentVariable6')]"
+                                    "value": "[parameters('AAD_APP_TENANT_ID')]"
                                 },
                                 {
                                     "name": "AAD_APP_REDIRECT_URI",
-                                    "value": "[parameters('environmentVariable7')]"
+                                    "value": "[parameters('AAD_APP_REDIRECT_URI')]"
                                 },
                                 {
                                     "name": "ADD_APP_SCOPE_URI",
-                                    "value": "[parameters('environmentVariable8')]"
+                                    "value": "[parameters('ADD_APP_SCOPE_URI')]"
                                 },
                                 {
                                     "name": "ISSUER",
-                                    "value": "[parameters('environmentVariable9')]"
+                                    "value": "[parameters('ISSUER')]"
                                 },
                                 {
                                     "name": "KAFKA_BROKER",
-                                    "value": "[parameters('environmentVariable10')]"
+                                    "value": "[parameters('KAFKA_BROKER')]"
                                 },
                                 {
                                     "name": "KAFKA_USE_SASL",
-                                    "value": "[parameters('environmentVariable11')]"
+                                    "value": "[parameters('KAFKA_USE_SASL')]"
                                 },
                                 {
                                     "name": "KAFKA_ENGINE_TOPIC",
-                                    "value": "[parameters('environmentVariable12')]"
+                                    "value": "[parameters('KAFKA_ENGINE_TOPIC')]"
                                 },
                                 {
                                     "name": "KAFKA_PRODUCER_USERNAME",
-                                    "value": "[parameters('environmentVariable13')]"
+                                    "value": "[parameters('KAFKA_PRODUCER_USERNAME')]"
                                 },
                                 {
                                     "name": "KAFKA_PRODUCER_PASSWORD",
-                                    "secureValue": "[parameters('environmentVariable14')]"
+                                    "secureValue": "[parameters('DB_USER4')]"
                                 },
                                 {
                                     "name": "KAFKA_CONSUMER_USERNAME",
-                                    "value": "[parameters('environmentVariable15')]"
+                                    "value": "[parameters('KAFKA_CONSUMER_USERNAME')]"
                                 },
                                 {
                                     "name": "KAFKA_CONSUMER_PASSWORD",
-                                    "secureValue": "[parameters('environmentVariable16')]"
+                                    "secureValue": "[parameters('DB_USER6')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_API_KEY",
-                                    "secureValue": "[parameters('environmentVariable17')]"
+                                    "secureValue": "[parameters('DB_USER7')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_ENDPOINT",
-                                    "value": "[parameters('environmentVariable18')]"
+                                    "value": "[parameters('AZURE_OPENAI_ENDPOINT')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_API_VERSION",
-                                    "value": "[parameters('environmentVariable19')]"
+                                    "value": "[parameters('AZURE_OPENAI_API_VERSION')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_DEPLOYMENT_NAME",
-                                    "value": "[parameters('environmentVariable20')]"
+                                    "value": "[parameters('AZURE_OPENAI_DEPLOYMENT_NAME')]"
                                 }
                             ],
                             "ports": "[parameters('ports')]",
