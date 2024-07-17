@@ -2,13 +2,13 @@
 
 ## Overview
 
+We use Event Hub (kafka equivalent) and Postgres Flexible Server
+
 We deploy the frontend on Storage Account's Static Web Hosting and it gets a HTTPS link. MS AAD (for authentication) cannot be deployed on a HTTP link. 
 
-We deploy the API Server and Engine as containers. API should be publicly accessible with a HTTPS link. For this we use a App Gateway.
+We deploy the API Server and Engine as containers. API should be publicly accessible with a HTTPS link. For this we use a App Gateway. We create a VNET and assign a subnet for the API Server. We assign another subnet for the App Gateway. 
 
 We need to create SSL cert for the App Gateway to ensure that both frontend and server are on a HTTPS link. We typically store the SSL certs in KeyVault. For other resources to access the KeyVault we need Managed Identities.
-
-We use Event Hub (kafka equivalent) and Postgres Flexible Server 
 
 ## Deployment of the Frontend
 

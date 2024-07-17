@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "availabilityZones": {
+            "value": []
+        },
+        "containerName": {
+            "value": "jb-studio-engine"
+        },
+        "location": {
+            "value": "centralindia"
+        },
+        "imageType": {
+            "value": "Private"
+        },
+        "imageName": {
+            "value": "jbstudio.azurecr.io/jb-studio-engine:2"
+        },
+        "osType": {
+            "value": "Linux"
+        },
+        "numberCpuCores": {
+            "value": "1"
+        },
+        "memory": {
+            "value": "1.5"
+        },
+        "restartPolicy": {
+            "value": "OnFailure"
+        },
+        "sku": {
+            "value": "Standard"
+        },
+        "imageRegistryLoginServer": {
+            "value": "jbstudio.azurecr.io"
+        },
+        "imageUsername": {
+            "value": "jbstudio"
+        },
+        "imagePassword": {
+            "value": ""
+        },
+        "environmentVariable0": {
+            "value": "jbstudio.servicebus.windows.net:9093"
+        },
+        "environmentVariable1": {
+            "value": "true"
+        },
+        "environmentVariable2": {
+            "value": "$ConnectionString"
+        },
+        "environmentVariable3": {
+            "value": ""
+        },
+        "environmentVariable4": {
+            "value": "$ConnectionString"
+        },
+        "environmentVariable5": {
+            "value": ""
+        },
+        "environmentVariable6": {
+            "value": "jb"
+        },
+        "environmentVariable7": {
+            "value": ""
+        },
+        "environmentVariable8": {
+            "value": "2023-12-01-preview"
+        },
+        "environmentVariable9": {
+            "value": ""
+        },
+        "ipAddressType": {
+            "value": "Public"
+        },
+        "ports": {
+            "value": [
+                {
+                    "port": "80",
+                    "protocol": "TCP"
+                }
+            ]
+        }
+    }
+}
