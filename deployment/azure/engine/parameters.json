@@ -50,13 +50,13 @@
         "KAFKA_PRODUCER_USERNAME": {
             "value": "$ConnectionString"
         },
-        "environmentVariable3": {
+        "KAFKA_PRODUCER_PASSWORD": {
             "value": ""
         },
         "KAFKA_CONSUMER_USERNAME": {
             "value": "$ConnectionString"
         },
-        "environmentVariable5": {
+        "KAFKA_CONSUMER_PASSWORD": {
             "value": ""
         },
         "KAFKA_ENGINE_TOPIC": {
