@@ -41,34 +41,34 @@
         "imagePassword": {
             "value": ""
         },
-        "environmentVariable0": {
+        "KAFKA_BROKER": {
             "value": "jbstudio.servicebus.windows.net:9093"
         },
-        "environmentVariable1": {
+        "KAFKA_USE_SASL": {
             "value": "true"
         },
-        "environmentVariable2": {
+        "KAFKA_PRODUCER_USERNAME": {
             "value": "$ConnectionString"
         },
         "environmentVariable3": {
             "value": ""
         },
-        "environmentVariable4": {
+        "KAFKA_CONSUMER_USERNAME": {
             "value": "$ConnectionString"
         },
         "environmentVariable5": {
             "value": ""
         },
-        "environmentVariable6": {
+        "KAFKA_ENGINE_TOPIC": {
             "value": "jb"
         },
-        "environmentVariable7": {
+        "AZURE_OPENAI_API_KEY": {
             "value": ""
         },
-        "environmentVariable8": {
+        "AZURE_OPENAI_API_VERSION": {
             "value": "2023-12-01-preview"
         },
-        "environmentVariable9": {
+        "AZURE_OPENAI_ENDPOINT": {
             "value": ""
         },
         "ipAddressType": {

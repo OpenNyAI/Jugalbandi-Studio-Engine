@@ -58,34 +58,34 @@
         "imagePassword": {
             "type": "secureString"
         },
-        "environmentVariable0": {
+        "KAFKA_BROKER": {
             "type": "string"
         },
-        "environmentVariable1": {
+        "KAFKA_USE_SASL": {
             "type": "string"
         },
-        "environmentVariable2": {
+        "KAFKA_PRODUCER_USERNAME": {
             "type": "string"
         },
         "environmentVariable3": {
             "type": "secureString"
         },
-        "environmentVariable4": {
+        "KAFKA_CONSUMER_USERNAME": {
             "type": "string"
         },
         "environmentVariable5": {
             "type": "secureString"
         },
-        "environmentVariable6": {
+        "KAFKA_ENGINE_TOPIC": {
             "type": "string"
         },
-        "environmentVariable7": {
+        "AZURE_OPENAI_API_KEY": {
             "type": "string"
         },
-        "environmentVariable8": {
+        "AZURE_OPENAI_API_VERSION": {
             "type": "string"
         },
-        "environmentVariable9": {
+        "AZURE_OPENAI_ENDPOINT": {
             "type": "string"
         },
         "ipAddressType": {
@@ -117,15 +117,15 @@
                             "environmentVariables": [
                                 {
                                     "name": "KAFKA_BROKER",
-                                    "value": "[parameters('environmentVariable0')]"
+                                    "value": "[parameters('KAFKA_BROKER')]"
                                 },
                                 {
                                     "name": "KAFKA_USE_SASL",
-                                    "value": "[parameters('environmentVariable1')]"
+                                    "value": "[parameters('KAFKA_USE_SASL')]"
                                 },
                                 {
                                     "name": "KAFKA_PRODUCER_USERNAME",
-                                    "value": "[parameters('environmentVariable2')]"
+                                    "value": "[parameters('KAFKA_PRODUCER_USERNAME')]"
                                 },
                                 {
                                     "name": "KAFKA_PRODUCER_PASSWORD",
@@ -133,7 +133,7 @@
                                 },
                                 {
                                     "name": "KAFKA_CONSUMER_USERNAME",
-                                    "value": "[parameters('environmentVariable4')]"
+                                    "value": "[parameters('KAFKA_CONSUMER_USERNAME')]"
                                 },
                                 {
                                     "name": "KAFKA_CONSUMER_PASSWORD",
@@ -141,19 +141,19 @@
                                 },
                                 {
                                     "name": "KAFKA_ENGINE_TOPIC",
-                                    "value": "[parameters('environmentVariable6')]"
+                                    "value": "[parameters('KAFKA_ENGINE_TOPIC')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_API_KEY",
-                                    "value": "[parameters('environmentVariable7')]"
+                                    "value": "[parameters('AZURE_OPENAI_API_KEY')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_API_VERSION",
-                                    "value": "[parameters('environmentVariable8')]"
+                                    "value": "[parameters('AZURE_OPENAI_API_VERSION')]"
                                 },
                                 {
                                     "name": "AZURE_OPENAI_ENDPOINT",
-                                    "value": "[parameters('environmentVariable9')]"
+                                    "value": "[parameters('AZURE_OPENAI_ENDPOINT')]"
                                 }
                             ],
                             "ports": "[parameters('ports')]"
