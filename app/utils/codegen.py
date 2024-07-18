@@ -109,12 +109,15 @@ class CodeGen:
             message = None
         method_code = f"""
     def on_enter_{state_name}(self):
-        from plugins import {plugin["name"]}
+        # {plugin["name"]} is installed as a module
+        # {plugin["name"]} module has {plugin["name"]}.py file
+        # The file implements plugin as function `invoke_plugin`
+        # `invoke_plugin` is mapped to {plugin["name"]}_func during imports
         self._on_enter_plugin(
-            plugin={plugin["name"]},
+            plugin={plugin["name"]}_func,
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
-            message="{message}"        
+            message="{message}"
         )
     """
         return method_code
@@ -135,9 +138,10 @@ class CodeGen:
 
         # correct source of formatted strings
         msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
-        brace_loc = [m.span()[0] for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
-        for pos in brace_loc[::-1]:
-            message = message[: pos + 1] + "self.variables." + message[pos + 1 :]
+        brace_ranges = [m.span() for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
+        for pos_s, pos_e in brace_ranges[::-1]:
+            if message[pos_s + 1:pos_e - 1] in self.variables:
+                message = message[:pos_s + 1] + "self.variables." + message[pos_s+1:]
 
         if options:
             method_code = f"""
@@ -167,7 +171,7 @@ class CodeGen:
         """
         return method_code
 
-    def generate_on_enter_logic(self, task, validation_expression):
+    def generate_on_enter_logic(self, task, validation_expression, should_validate=True):
         logic_state = f"{task['name']}_logic"
         options = task.get("options", None)
         method_code = f"""
@@ -177,25 +181,24 @@ class CodeGen:
             write_var="{task['write_variable']}",
             options={options},
             validation="{validation_expression}",
+            should_validate={should_validate}
         )
     """
         return method_code
 
     def generate_on_enter_assign(self, task, validation_expression):
         logic_state = f"{task['name']}"
-
+        
         varlist = self.variables
-
         class VarTweaker(ast.NodeTransformer):
             def visit_Name(self, node):
                 if node.id in varlist:
-                    return ast.Name(
-                        **{**node.__dict__, "id": "self.variables." + node.id}
-                    )
+                    return ast.Name(**{**node.__dict__, 'id':"self.variables." + node.id})
                 else:
                     return node
-
+        
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
+
         # if correct expression has single = then it is assignment
         # else return the expression as it is
         if "=" in correct_expr:
@@ -240,6 +243,7 @@ class CodeGen:
                     )
 
                 validation = self.variables[task["write_variable"]]["validation"]
+                should_validate = task["should_validate"] if "should_validate" in task else True
 
                 self.validation_methods.append(
                     (method_name, task["write_variable"], validation)
@@ -258,6 +262,7 @@ class CodeGen:
                         "type": "logic",
                         "state": task,
                         "validation_expression": validation,
+                        "should_validate": should_validate
                     }
                 )
             elif task["task_type"] == "print":
@@ -361,13 +366,18 @@ class CodeGen:
                             "dest": input_state,
                             "trigger": "next",
                         },
-                        {"source": input_state, "dest": logic_state, "trigger": "next"},
+                        {
+                            "source": input_state,
+                            "dest": logic_state,
+                            "trigger": "next"
+                        }
                     ]
                 )
                 if goto is None:
                     goto = "end"
                 if goto and goto not in self.states and goto != "end":
                     goto = f"{goto}_display"
+
                 if error_goto is None:
                     error_goto = "end"
                 if error_goto and error_goto not in self.states and error_goto != "end":
@@ -430,6 +440,7 @@ class CodeGen:
         self.code = f"""
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
+
 from jb_manager_bot import (
     AbstractFSM,
     FSMOutput,
@@ -497,7 +508,7 @@ class {self.fsm_class_name}(AbstractFSM):
                 self.code += self.generate_on_enter_input(method["state"])
             elif method["type"] == "logic":
                 self.code += self.generate_on_enter_logic(
-                    method["state"], method["validation_expression"]
+                    method["state"], method["validation_expression"], method.get("should_validate", True)
                 )
             elif method["type"] == "condition":
                 self.code += self.generate_on_enter_condition(method["state"])

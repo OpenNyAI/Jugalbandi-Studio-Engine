@@ -1,14 +1,18 @@
 import asyncio
 import threading
 import importlib
+import importlib.util
 import os
 import sys
 import json
 import re
 import requests
 import yaml
+import traceback
+import ctypes
+import urllib
 
-from typing import List
+from typing import List, Type, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -16,6 +20,8 @@ from pwr_studio.representations import PwRStudioRepresentation
 from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
+# temporary lib imports
+from jb_manager_bot import AbstractFSM, FSMOutput
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -28,8 +34,21 @@ from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
+from .utils.convert_dsl_for_test import convert_dsl
 from .utils.question_answer import get_answer_or_instruction
 
+# test code runtime
+from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
+from pydantic import BaseModel, Field
+
+import re
+
+credentials = {
+    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_API_ENDPOINT', ''),
+    'AZURE_OPENAI_API_KEY': os.getenv('AZURE_OPENAI_API_KEY', ''),
+    'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION', ''),
+    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
+}
 
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -71,7 +90,6 @@ def extract_plugins(text: str):
 
     return text, plugins
 
-
 class JBEngine(PwRStudioEngine):
 
     def __init__(
@@ -86,7 +104,7 @@ class JBEngine(PwRStudioEngine):
             super().__init__(project, progress, credentials=credentials)
 
     def _get_representations(self) -> List[PwRStudioRepresentation]:
-        return [NLRep(), DSLRep(), SJSRep(), CodeRep()]
+        return [NLRep(), DSLRep(), SJSRep(), CodeRep(), TestStateRep()]
 
     async def _process_utterance(self, text, **kwargs):
 
@@ -103,7 +121,7 @@ class JBEngine(PwRStudioEngine):
                 "dsl": [
                     {
                         "task_type": "start",
-                        "name": "start",
+                        "name": "zero",
                         "goto": "end",
                     },
                     {
@@ -200,7 +218,11 @@ class JBEngine(PwRStudioEngine):
         # user_output = d.change.llm_review
 
         if nl2dsl.dsl is not None:
-            self._project.representations["dsl"].text = json.dumps(nl2dsl.dsl, indent=4)
+            new_dsl = json.dumps(nl2dsl.dsl, indent=4)
+            self._project.representations["dsl"].text = new_dsl
+
+            if new_dsl != self._project.representations["dsl"].text:
+                self._project.representations["fsm_state"].text = "{}"
 
         if nlr is not None:
             self._project.representations["description"].text = nlr
@@ -227,7 +249,103 @@ class JBEngine(PwRStudioEngine):
         )
 
     async def _get_output(self, user_input, **kwargs):
-        pass
+        # to remove trailing new lines
+        user_input = user_input.strip()
+
+        msg_queue = []
+        def fsm_callback(x: FSMOutput):
+            if x.message_data.header:
+                msg_queue.append(x.message_data.header)
+            if x.message_data.body:
+                msg_queue.append(x.message_data.body)
+            if x.message_data.footer:
+                msg_queue.append(x.message_data.footer)
+            if x.options_list:
+                #msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
+                pass
+            if x.media_url:
+                msg_queue.append(x.media_url)
+
+        def get_input_parts(x: str):
+            if x is not None:
+                if '\xa1' in x:
+                    input_data = x.split('\xa1')[0]
+                    try:
+                        jobj = json.loads(input_data)
+                        return list(jobj["vars"].values())
+                    except:
+                        return [input_data, ]
+                else:
+                    return [x, ]
+            else:
+                return [None, ]
+
+        if user_input == "_reset_chat_" or user_input == "/start" or user_input == "hi":
+            # restart the bot
+            await self._progress(
+                Response(type="thought", message="Starting new bot instance", project=self._project)
+            )
+            user_input = None
+            self._project.representations["fsm_state"].text = "{}"
+
+        is_bot_end = False
+        try:
+            test_dsl = convert_dsl(self._project.representations["dsl"].text)
+            dsl_obj = json.loads(test_dsl)
+            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
+
+            # load class via exec
+            #gen_class_dict = {}
+            #exec(test_code, globals(), gen_class_dict)
+            #tclz = gen_class_dict[dsl_obj["fsm_name"]]
+
+            code_hash = str(ctypes.c_size_t(hash(test_code)).value)
+            module_name = "mod_" + code_hash
+            module_dir = "/tmp/pkg_" + code_hash
+            file_path = module_dir + "/fsm.py"
+
+            # TODO : handle concurrency
+            if not os.path.isdir(module_dir):
+                os.mkdir(module_dir)
+                with open(file_path, "w") as f:
+                    f.write(test_code)
+                    open(module_dir + "/__init__.py", "a").close()
+
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+
+            spec.loader.exec_module(module)
+            tclz = getattr(module, dsl_obj["fsm_name"])
+
+            fsm_state = self._project.representations["fsm_state"].text
+            state = None
+            if fsm_state and fsm_state != "{}":
+                state = json.loads(fsm_state)
+
+            input_parts = get_input_parts(user_input)
+            for inp in input_parts:
+                state = tclz.run_machine(fsm_callback, inp, None, credentials, state)
+
+            self._project.representations["fsm_state"].text = json.dumps(state)
+
+            if state and state["main"]["state"] == "zero":
+                is_bot_end = True
+
+        except:
+            print(traceback.format_exc())
+            await self._progress(
+                Response(type="thought", message="Error in processing dsl", project=self._project)
+            )
+
+        if len(msg_queue) > 0:
+            for m in msg_queue:
+                await self._progress(Response(type="output", message=m, project=self._project))
+
+        if is_bot_end:
+            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart to test again.", project=self._project))
+        elif len(msg_queue) < 1:
+            await self._progress(Response(type="thought", message="Enter input to proceed.", project=self._project))
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
@@ -319,3 +437,7 @@ class DSLRep(PwRStudioRepresentation):
 class CodeRep(PwRStudioRepresentation):
     def _get_initial_values(self):
         return Representation(name="code", text="", type="md", sort_order=1)
+
+class TestStateRep(PwRStudioRepresentation):
+    def _get_initial_values(self):
+        return Representation(name="fsm_state", text="{}", type="md", sort_order=0)
