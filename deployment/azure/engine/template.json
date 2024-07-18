@@ -1,0 +1,181 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "availabilityZones": {
+            "type": "array"
+        },
+        "location": {
+            "type": "string"
+        },
+        "containerName": {
+            "type": "string"
+        },
+        "imageType": {
+            "type": "string",
+            "allowedValues": [
+                "Public",
+                "Private"
+            ]
+        },
+        "imageName": {
+            "type": "string"
+        },
+        "osType": {
+            "type": "string",
+            "allowedValues": [
+                "Linux",
+                "Windows"
+            ]
+        },
+        "numberCpuCores": {
+            "type": "string"
+        },
+        "memory": {
+            "type": "string"
+        },
+        "restartPolicy": {
+            "type": "string",
+            "allowedValues": [
+                "OnFailure",
+                "Always",
+                "Never"
+            ]
+        },
+        "sku": {
+            "type": "string",
+            "allowedValues": [
+                "Standard",
+                "Confidential"
+            ]
+        },
+        "imageRegistryLoginServer": {
+            "type": "string"
+        },
+        "imageUsername": {
+            "type": "string"
+        },
+        "imagePassword": {
+            "type": "secureString"
+        },
+        "KAFKA_BROKER": {
+            "type": "string"
+        },
+        "KAFKA_USE_SASL": {
+            "type": "string"
+        },
+        "KAFKA_PRODUCER_USERNAME": {
+            "type": "string"
+        },
+        "KAFKA_PRODUCER_PASSWORD": {
+            "type": "secureString"
+        },
+        "KAFKA_CONSUMER_USERNAME": {
+            "type": "string"
+        },
+        "KAFKA_CONSUMER_PASSWORD": {
+            "type": "secureString"
+        },
+        "KAFKA_ENGINE_TOPIC": {
+            "type": "string"
+        },
+        "AZURE_OPENAI_API_KEY": {
+            "type": "string"
+        },
+        "AZURE_OPENAI_API_VERSION": {
+            "type": "string"
+        },
+        "AZURE_OPENAI_ENDPOINT": {
+            "type": "string"
+        },
+        "ipAddressType": {
+            "type": "string"
+        },
+        "ports": {
+            "type": "array"
+        }
+    },
+    "resources": [
+        {
+            "location": "[parameters('location')]",
+            "name": "[parameters('containerName')]",
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2022-10-01-preview",
+            "zones": "[parameters('availabilityZones')]",
+            "properties": {
+                "containers": [
+                    {
+                        "name": "[parameters('containerName')]",
+                        "properties": {
+                            "image": "[parameters('imageName')]",
+                            "resources": {
+                                "requests": {
+                                    "cpu": "[int(parameters('numberCpuCores'))]",
+                                    "memoryInGB": "[float(parameters('memory'))]"
+                                }
+                            },
+                            "environmentVariables": [
+                                {
+                                    "name": "KAFKA_BROKER",
+                                    "value": "[parameters('KAFKA_BROKER')]"
+                                },
+                                {
+                                    "name": "KAFKA_USE_SASL",
+                                    "value": "[parameters('KAFKA_USE_SASL')]"
+                                },
+                                {
+                                    "name": "KAFKA_PRODUCER_USERNAME",
+                                    "value": "[parameters('KAFKA_PRODUCER_USERNAME')]"
+                                },
+                                {
+                                    "name": "KAFKA_PRODUCER_PASSWORD",
+                                    "secureValue": "[parameters('KAFKA_PRODUCER_PASSWORD')]"
+                                },
+                                {
+                                    "name": "KAFKA_CONSUMER_USERNAME",
+                                    "value": "[parameters('KAFKA_CONSUMER_USERNAME')]"
+                                },
+                                {
+                                    "name": "KAFKA_CONSUMER_PASSWORD",
+                                    "secureValue": "[parameters('KAFKA_CONSUMER_PASSWORD')]"
+                                },
+                                {
+                                    "name": "KAFKA_ENGINE_TOPIC",
+                                    "value": "[parameters('KAFKA_ENGINE_TOPIC')]"
+                                },
+                                {
+                                    "name": "AZURE_OPENAI_API_KEY",
+                                    "value": "[parameters('AZURE_OPENAI_API_KEY')]"
+                                },
+                                {
+                                    "name": "AZURE_OPENAI_API_VERSION",
+                                    "value": "[parameters('AZURE_OPENAI_API_VERSION')]"
+                                },
+                                {
+                                    "name": "AZURE_OPENAI_ENDPOINT",
+                                    "value": "[parameters('AZURE_OPENAI_ENDPOINT')]"
+                                }
+                            ],
+                            "ports": "[parameters('ports')]"
+                        }
+                    }
+                ],
+                "restartPolicy": "[parameters('restartPolicy')]",
+                "osType": "[parameters('osType')]",
+                "sku": "[parameters('sku')]",
+                "imageRegistryCredentials": [
+                    {
+                        "server": "[parameters('imageRegistryLoginServer')]",
+                        "username": "[parameters('imageUsername')]",
+                        "password": "[parameters('imagePassword')]"
+                    }
+                ],
+                "ipAddress": {
+                    "type": "[parameters('ipAddressType')]",
+                    "ports": "[parameters('ports')]"
+                }
+            },
+            "tags": {}
+        }
+    ]
+}

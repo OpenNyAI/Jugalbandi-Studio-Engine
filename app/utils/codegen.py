@@ -10,6 +10,13 @@ import ast
 #     "variables": [],0
 #     "dsl": []
 # }
+azure_vars = [
+    "AZURE_OPENAI_API_KEY",
+    "AZURE_OPENAI_ENDPOINT",
+    "AZURE_OPENAI_API_VERSION",
+    "FAST_MODEL",
+    "SLOW_MODEL",
+]
 
 
 class CodeGen:
@@ -455,6 +462,10 @@ class {self.fsm_class_name}(AbstractFSM):
             if not credentials.get(variable["name"]):
                 raise ValueError(f"Missing credential: {{variable['name']}}")
             self.credentials[variable["name"]] = credentials.get(variable["name"])
+        for variable in {azure_vars}:
+            if not credentials.get(variable):
+                raise ValueError(f"Missing credential: {{variable}}")
+            self.credentials[variable] = credentials.get(variable)
 
         self.plugins: Dict[str, AbstractFSM] = {{}}
         self.variables = self.variable_names()
@@ -511,3 +522,4 @@ class {self.fsm_class_name}(AbstractFSM):
         return self._plugin_error_code_validation("{method["condition"]}")
         """
         return self.code
+

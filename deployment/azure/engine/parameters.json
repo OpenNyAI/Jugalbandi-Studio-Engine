@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "availabilityZones": {
+            "value": []
+        },
+        "containerName": {
+            "value": "jb-studio-engine"
+        },
+        "location": {
+            "value": "centralindia"
+        },
+        "imageType": {
+            "value": "Private"
+        },
+        "imageName": {
+            "value": "jbstudio.azurecr.io/jb-studio-engine:2"
+        },
+        "osType": {
+            "value": "Linux"
+        },
+        "numberCpuCores": {
+            "value": "1"
+        },
+        "memory": {
+            "value": "1.5"
+        },
+        "restartPolicy": {
+            "value": "OnFailure"
+        },
+        "sku": {
+            "value": "Standard"
+        },
+        "imageRegistryLoginServer": {
+            "value": "jbstudio.azurecr.io"
+        },
+        "imageUsername": {
+            "value": "jbstudio"
+        },
+        "imagePassword": {
+            "value": ""
+        },
+        "KAFKA_BROKER": {
+            "value": "jbstudio.servicebus.windows.net:9093"
+        },
+        "KAFKA_USE_SASL": {
+            "value": "true"
+        },
+        "KAFKA_PRODUCER_USERNAME": {
+            "value": "$ConnectionString"
+        },
+        "KAFKA_PRODUCER_PASSWORD": {
+            "value": ""
+        },
+        "KAFKA_CONSUMER_USERNAME": {
+            "value": "$ConnectionString"
+        },
+        "KAFKA_CONSUMER_PASSWORD": {
+            "value": ""
+        },
+        "KAFKA_ENGINE_TOPIC": {
+            "value": "jb"
+        },
+        "AZURE_OPENAI_API_KEY": {
+            "value": ""
+        },
+        "AZURE_OPENAI_API_VERSION": {
+            "value": "2023-12-01-preview"
+        },
+        "AZURE_OPENAI_ENDPOINT": {
+            "value": ""
+        },
+        "ipAddressType": {
+            "value": "Public"
+        },
+        "ports": {
+            "value": [
+                {
+                    "port": "80",
+                    "protocol": "TCP"
+                }
+            ]
+        }
+    }
+}
