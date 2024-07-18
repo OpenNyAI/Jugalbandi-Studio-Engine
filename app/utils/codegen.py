@@ -1,8 +1,6 @@
 import json
 from math import e
 import re
-import sys
-import re
 import ast
 
 # json_data should have the following structure
@@ -12,6 +10,13 @@ import ast
 #     "variables": [],0
 #     "dsl": []
 # }
+azure_vars = [
+    "AZURE_OPENAI_API_KEY",
+    "AZURE_OPENAI_ENDPOINT",
+    "AZURE_OPENAI_API_VERSION",
+    "FAST_MODEL",
+    "SLOW_MODEL",
+]
 
 
 class CodeGen:
@@ -194,13 +199,24 @@ class CodeGen:
         
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
 
+        # if correct expression has single = then it is assignment
+        # else return the expression as it is
+        if "=" in correct_expr:
+            correct_expr = """
+            {correct_expr}
+            return self.variables.{str(task['write_variable'])}
+"""
+        else:
+            correct_expr = f"""
+            return {correct_expr}
+"""
+
         method_code = f"""
     def on_enter_{logic_state}(self):
         variable_name = "{task['write_variable']}"
         expression = "{task['operation']}"
         def validation(*args):
             {correct_expr}
-            return self.variables.{str(task['write_variable'])}
         self._on_enter_assign(variable_name, validation)
     """
         return method_code
@@ -361,7 +377,7 @@ class CodeGen:
                     goto = "end"
                 if goto and goto not in self.states and goto != "end":
                     goto = f"{goto}_display"
-                
+
                 if error_goto is None:
                     error_goto = "end"
                 if error_goto and error_goto not in self.states and error_goto != "end":
@@ -431,10 +447,14 @@ from jb_manager_bot import (
 )
 import re
 """
-        self.code += self.generate_pydantic_class(
+        pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
+        pydantic_code = "\n".join(["" + l for l in pydantic_code.split("\n")])
+
         self.code += f"""
+{pydantic_code}
+
 class {self.fsm_class_name}(AbstractFSM):
     states = {self.states}
     transitions = {self.transitions}
@@ -453,6 +473,10 @@ class {self.fsm_class_name}(AbstractFSM):
             if not credentials.get(variable["name"]):
                 raise ValueError(f"Missing credential: {{variable['name']}}")
             self.credentials[variable["name"]] = credentials.get(variable["name"])
+        for variable in {azure_vars}:
+            if not credentials.get(variable):
+                raise ValueError(f"Missing credential: {{variable}}")
+            self.credentials[variable] = credentials.get(variable)
 
         self.plugins: Dict[str, AbstractFSM] = {{}}
         self.variables = self.variable_names()
@@ -510,8 +534,3 @@ class {self.fsm_class_name}(AbstractFSM):
         """
         return self.code
 
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        fsm_code = CodeGen.from_json_file(sys.argv[1]).generate_fsm_code()
-        print(fsm_code)
