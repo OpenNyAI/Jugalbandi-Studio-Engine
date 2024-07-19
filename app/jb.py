@@ -21,7 +21,9 @@ from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
 # temporary lib imports
-from jb_manager_bot import AbstractFSM, FSMOutput
+from jb_manager_bot import AbstractFSM
+from jb_manager_bot.data_models import FSMOutput, FSMIntent, MessageType, Message
+
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -44,11 +46,14 @@ from pydantic import BaseModel, Field
 import re
 
 credentials = {
-    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_API_ENDPOINT', ''),
-    'AZURE_OPENAI_API_KEY': os.getenv('AZURE_OPENAI_API_KEY', ''),
-    'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION', ''),
-    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
+    "AZURE_OPENAI_API_ENDPOINT": "https://msri-openai-ifaq.azure-api.net/",
+    "AZURE_OPENAI_API_KEY": "5e70b1ce7bc640b2af90533abb9b1400",
+    "AZURE_OPENAI_API_VERSION": "2023-03-15-preview",
+    "OPENAI_API_KEY": "5e70b1ce7bc640b2af90533abb9b1400",
+    "FAST_MODEL": "gpt-4-turbo",
+    "SLOW_MODEL": "gpt-4-turbo",
 }
+
 
 def utcnow():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -89,6 +94,7 @@ def extract_plugins(text: str):
         text = text.replace(f"#plugin({match})", parsed_data["name"], 1)
 
     return text, plugins
+
 
 class JBEngine(PwRStudioEngine):
 
@@ -253,37 +259,49 @@ class JBEngine(PwRStudioEngine):
         user_input = user_input.strip()
 
         msg_queue = []
+
         def fsm_callback(x: FSMOutput):
-            if x.message_data.header:
-                msg_queue.append(x.message_data.header)
-            if x.message_data.body:
-                msg_queue.append(x.message_data.body)
-            if x.message_data.footer:
-                msg_queue.append(x.message_data.footer)
-            if x.options_list:
-                #msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
-                pass
-            if x.media_url:
-                msg_queue.append(x.media_url)
+            if x.intent == FSMIntent.SEND_MESSAGE:
+                if x.message.message_type == MessageType.TEXT:
+                    msg_queue.append(x.message.text.body)
+                elif x.message.message_type == MessageType.BUTTON:
+                    pass
+                elif x.message.message_type == MessageType.OPTION_LIST:
+                    pass
+                elif x.message.message_type == MessageType.IMAGE:
+                    msg_queue.append(x.message.image.caption)
+                    msg_queue.append(x.message.image.url)
+                else:
+                    msg_queue.append(x)
 
         def get_input_parts(x: str):
             if x is not None:
-                if '\xa1' in x:
-                    input_data = x.split('\xa1')[0]
+                if "\xa1" in x:
+                    input_data = x.split("\xa1")[0]
                     try:
                         jobj = json.loads(input_data)
                         return list(jobj["vars"].values())
                     except:
-                        return [input_data, ]
+                        return [
+                            input_data,
+                        ]
                 else:
-                    return [x, ]
+                    return [
+                        x,
+                    ]
             else:
-                return [None, ]
+                return [
+                    None,
+                ]
 
         if user_input == "_reset_chat_" or user_input == "/start" or user_input == "hi":
             # restart the bot
             await self._progress(
-                Response(type="thought", message="Starting new bot instance", project=self._project)
+                Response(
+                    type="thought",
+                    message="Starting new bot instance",
+                    project=self._project,
+                )
             )
             user_input = None
             self._project.representations["fsm_state"].text = "{}"
@@ -295,9 +313,9 @@ class JBEngine(PwRStudioEngine):
             test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
 
             # load class via exec
-            #gen_class_dict = {}
-            #exec(test_code, globals(), gen_class_dict)
-            #tclz = gen_class_dict[dsl_obj["fsm_name"]]
+            # gen_class_dict = {}
+            # exec(test_code, globals(), gen_class_dict)
+            # tclz = gen_class_dict[dsl_obj["fsm_name"]]
 
             code_hash = str(ctypes.c_size_t(hash(test_code)).value)
             module_name = "mod_" + code_hash
@@ -322,6 +340,12 @@ class JBEngine(PwRStudioEngine):
             state = None
             if fsm_state and fsm_state != "{}":
                 state = json.loads(fsm_state)
+            print("=" * 20)
+            print("Credentials: ", credentials)
+            print("State: ", fsm_state)
+            print("Test DSL", test_dsl)
+            print("Test Code", test_code)
+            print("=" * 20)
 
             input_parts = get_input_parts(user_input)
             for inp in input_parts:
@@ -335,17 +359,35 @@ class JBEngine(PwRStudioEngine):
         except:
             print(traceback.format_exc())
             await self._progress(
-                Response(type="thought", message="Error in processing dsl", project=self._project)
+                Response(
+                    type="thought",
+                    message="Error in processing dsl",
+                    project=self._project,
+                )
             )
 
         if len(msg_queue) > 0:
             for m in msg_queue:
-                await self._progress(Response(type="output", message=m, project=self._project))
+                await self._progress(
+                    Response(type="output", message=m, project=self._project)
+                )
 
         if is_bot_end:
-            await self._progress(Response(type="thought", message="The bot has successfully completed. Please restart to test again.", project=self._project))
+            await self._progress(
+                Response(
+                    type="thought",
+                    message="The bot has successfully completed. Please restart to test again.",
+                    project=self._project,
+                )
+            )
         elif len(msg_queue) < 1:
-            await self._progress(Response(type="thought", message="Enter input to proceed.", project=self._project))
+            await self._progress(
+                Response(
+                    type="thought",
+                    message="Enter input to proceed.",
+                    project=self._project,
+                )
+            )
 
     async def _process_representation_edit(self, edit: ChangedRepresentation, **kwargs):
         pass
@@ -437,6 +479,7 @@ class DSLRep(PwRStudioRepresentation):
 class CodeRep(PwRStudioRepresentation):
     def _get_initial_values(self):
         return Representation(name="code", text="", type="md", sort_order=1)
+
 
 class TestStateRep(PwRStudioRepresentation):
     def _get_initial_values(self):

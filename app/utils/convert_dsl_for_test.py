@@ -114,8 +114,8 @@ def convert_dsl(dsl: str) -> str:
         for i, t in enumerate(new_input_tasks):
             new_dsl["dsl"].insert(i, t)
 
-        # remove the configs
-        new_dsl["config_vars"] = []
+        # # remove the configs
+        # new_dsl["config_vars"] = []
 
     # find and replace plugins as text inputs
     new_step_insertion = []
