@@ -8,7 +8,8 @@ description: |
         - KEY (type:str) : An API Key to access the vector database.
 
     The outputs provided are:
-        - KnowledgeEntries (type:list) : A list of knowledge entries fetched from the vector database. Each entry is represented as a JSON object containing details such as facts, data points, or contextual information.
+        - KNOWLEDGE_ENTRIES (type:list) : A list of knowledge entries fetched from the vector database. Each entry is represented as a JSON object containing details such as facts, data points, or contextual information.
+    
     Return codes are:
         - `SUCCESS`: Success - Indicates that the knowledge entries were successfully fetched.
         - `BAD_REQUEST`: - Indicates that there was an error in the input data.
