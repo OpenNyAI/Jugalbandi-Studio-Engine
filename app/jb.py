@@ -340,16 +340,18 @@ class JBEngine(PwRStudioEngine):
             state = None
             if fsm_state and fsm_state != "{}":
                 state = json.loads(fsm_state)
-            print("=" * 20)
-            print("Credentials: ", credentials)
-            print("State: ", fsm_state)
-            print("Test DSL", test_dsl)
-            print("Test Code", test_code)
-            print("=" * 20)
+            # print("=" * 20)
+            # print("Credentials: ", credentials)
+            # print("State: ", fsm_state)
+            # print("Test DSL", test_dsl)
+            # print("Test Code", test_code)
+            # print("=" * 20)
 
             input_parts = get_input_parts(user_input)
             for inp in input_parts:
                 state = tclz.run_machine(fsm_callback, inp, None, credentials, state)
+
+                print("LOOP State: ", state)
 
             self._project.representations["fsm_state"].text = json.dumps(state)
 
@@ -365,6 +367,15 @@ class JBEngine(PwRStudioEngine):
                     project=self._project,
                 )
             )
+        if len(msg_queue) > 0:
+            is_custom_json_present = False
+            custom_json = None
+            for m in msg_queue:
+                if "}\xa1" in m:
+                    is_custom_json_present = True
+                    custom_json = m.split("\xa1")[0]
+            if is_custom_json_present:
+                msg_queue[-1] = custom_json + "\xa1" + msg_queue[-1]
 
         if len(msg_queue) > 0:
             for m in msg_queue:
