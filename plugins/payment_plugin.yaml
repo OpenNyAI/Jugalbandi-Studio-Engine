@@ -1,6 +1,6 @@
-name: payment_plugin
+name: payment
 description: |
-    The name of the plugin is payment. This plugin helps in collecting a payment from the user by generating a payment link.
+    The name of the plugin is payment. This plugin takes user details and payment amount to make a payment for a specific reason.
 
     The inputs needed are:
         - mobile_number (type:str) : The mobile number of the user
@@ -17,5 +17,4 @@ description: |
         - `SUCCESS`: Indicates that the payment was successfully collected.
         - `CANCELLED_BY_USER`: Indicates cancelled by the user.
         - `EXPIRED`: Indicates that the payment link has expired.
-        - `SERVER_DOWNTIME`: Indicates that the server is down.
         - `SERVER_ERROR`: Indicates that there was an error in the server.
