@@ -191,7 +191,10 @@ class JBEngine(PwRStudioEngine):
 
         nl2dsl.nl2dsl()
 
-        issues = nl2dsl.validate_dsl()
+        issues = {
+            "errors": nl2dsl.validate_dsl(),
+            "warnings": []
+        }
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
