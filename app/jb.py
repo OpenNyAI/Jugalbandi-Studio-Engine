@@ -168,6 +168,16 @@ class JBEngine(PwRStudioEngine):
                     f"All steps in the plan have been applied successfully! 🎉"
                 )
                 status_update_callback(f"Generating the final program ...")
+            elif event == "global_variables_updated":
+                status_update_callback(
+                    f"Global variables have been updated successfully!"
+                )
+            elif event == "config_vars_updated":
+                status_update_callback(
+                    f"Config variables have been updated successfully!"
+                )
+            elif event == "dsl_updated_successfully":
+                status_update_callback(f"DSL has been updated successfully!")
 
         status_update_callback(f"Generating a plan to update the program ...")
         old_nlr = generate_nlr(dsl)
@@ -185,6 +195,7 @@ class JBEngine(PwRStudioEngine):
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
+        status_update_callback(f"Preparing feedback ...")
         feedback = generate_feedback(
             chat_history_strings
             + [
