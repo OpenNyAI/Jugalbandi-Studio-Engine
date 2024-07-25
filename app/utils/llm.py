@@ -17,7 +17,10 @@ def llm(messages, **kwargs):
     else:
         client = OpenAI()
 
-    kwargs["model"] = kwargs.get("model", "gpt-4-turbo")
+    if os.getenv("MODEL_NAME") is None:
+        raise EnvironmentError("OpenAI MODEL_NAME environment variable is not set")
+    kwargs["model"] = os.getenv("MODEL_NAME")
+
     kwargs["messages"] = messages
     args = {
         k: v
