@@ -2,30 +2,27 @@ import json
 
 
 def generate_nlr(dsl):
-    def get_config_variable_info(var):
+    def snake_to_camel_case(snake_str):
+        components = snake_str.split("_")
+        return " ".join(x.title() for x in components)
+
+    def get_config_variable_info(var, index):
         name = var.get("name", "Unknown")
         description = var.get("description", "No description provided")
-        return f"- **Name**: {name}\n\n\t**Description**: {description}"
+        return f"{index}. {name}\n\n    {description}"
 
-    def get_variable_info(var, if_config=False):
+    def get_variable_info(var, index):
         name = var.get("name", "Unknown")
-        var_type = var.get("type", "Unknown")
-        description = var.get("description", "No description provided")
-        return f"- **Name**: {name}\n\n\t**Type**: {var_type}\n\n  **Validation**: {description}"
+        validation = var.get("description", var.get("validation", "Unknown"))
+        return f"{index}. {name}:\n\n    {validation}"
 
-    def get_task_info(task):
-        task_info = []
+    def get_task_info(task, index):
+        task_name = task.get("name", "Unknown Step")
+        task_name = snake_to_camel_case(task_name)
+        task_info = [f"### {index}. {task_name}"]
 
         if "message" in task and task["message"]:
-            task_info.append(f"**Message**: {task['message']}\n")
-
-        # if "read_variables" in task:
-        #     read_vars = ", ".join(task["read_variables"])
-        #     task_info.append(f"**Uses Data From**: {read_vars}")
-
-        # if "write_variables" in task:
-        #     write_vars = ", ".join(task["write_variables"])
-        #     task_info.append(f"**Saves Data To**: {write_vars}")
+            task_info.append(f"**Message**: {task['message']}")
 
         if "plugin" in task:
             plugin_info = task.get("plugin", {})
@@ -33,10 +30,7 @@ def generate_nlr(dsl):
 
         if "options" in task:
             options = ", ".join(task["options"])
-            task_info.append(f"\n**Options**: {options}\n")
-
-        # if "description" in task:
-        #     task_info.append(f"**Description**: {task['description']}\n")
+            task_info.append(f"**Options**: {options}")
 
         return "\n".join(task_info)
 
@@ -50,110 +44,111 @@ def generate_nlr(dsl):
             options = task.get("options", None)
             if options:
                 explanation = (
-                    "This step asks the user to choose from a list of options. "
+                    "This step asks the user to choose from a list of options."
                 )
             else:
                 explanation = "This step asks the user to enter information, which is then stored for further use."
             if "write_variable" in task:
-                explanation += f" The user's input is saved in the variable named `{task['write_variable']}` and must be in text `{task['datatype']}` format."
+                explanation += f" The user's input is saved in the variable named `{task['write_variable']}`."
         elif task_type == "plugin":
             plugin_info = task.get("plugin", {})
-            explanation = f"\n\nThis step calls a plugin named `{plugin_info.get('name', 'Unknown')}` to perform specific operations.\n\n"
-            if "inputs" in plugin_info and "outputs" in plugin_info:
-                explanation += "The plugin uses the following inputs mapped from the workflow variables:\n\n"
-                explanation += "\n\n".join(
+            explanation = f"This step calls a plugin named `{plugin_info.get('name', 'Unknown')}`."
+
+            if "inputs" in plugin_info:
+                explanation += "\n\nInput Variables:\n"
+                explanation += "\n| Plugin Parameter | Workflow Variable |\n|---|---|\n"
+                inputs = "\n".join(
                     [
-                        f"- `{k}` (plugin parameter) mapped from `{v}` (workflow variable)"
+                        f"| `{k}` | `{v}` |"
                         for k, v in plugin_info.get("inputs", {}).items()
                     ]
                 )
-                explanation += "\n\nThe plugin provides the following outputs mapped to the workflow variables:\n\n"
-                explanation += "\n\n".join(
+                explanation += inputs
+
+            if "outputs" in plugin_info:
+                explanation += "\n\nOutput Variables:\n\n"
+                explanation += "\n| Plugin Parameter | Workflow Variable |\n|---|---|\n"
+                outputs = "\n".join(
                     [
-                        f"- `{k}` (plugin parameter) mapped to `{v}` (workflow variable)"
+                        f"| `{k}` | `{v}` |"
                         for k, v in plugin_info.get("outputs", {}).items()
                     ]
                 )
-
+                explanation += outputs
         elif task_type == "goto":
             explanation = f"This step moves to the next step named `{task.get('goto', 'the next step')}`."
         elif task_type == "condition":
-            explanation = "This step checks a specific condition and decides the next step based on whether the condition is met.\n\n"
+            explanation = "This step checks a specific condition and decides the next step based on whether the condition is met."
         elif task_type == "operation":
             explanation = "This step performs the above operation."
 
-        return f"\n{explanation}"
+        return explanation
 
     def get_transitions_explanation(task):
         task_type = task.get("task_type", "Unknown")
+        next_step = task.get("goto", "None")
+
         if task_type == "operation":
-            next_step = task.get("goto", "None")
-            return f"Once the operation is performed, the workflow moves to the next step: `{next_step}` automatically."
-        if task_type == "print":
-            next_step = task.get("goto", "None")
-            return f"\n\nAfter displaying the message, the workflow moves to the next step: `{next_step}`."
+            return f"Moves to `{next_step}` after operation."
+        elif task_type == "print":
+            return f"Moves to `{next_step}` after displaying the message."
         elif task_type == "input":
             success_step = task.get("goto", "None")
             error_step = task.get("error_goto", "None")
-            transition = "The workflow moves to the next step based on:\n\n"
-            transition += f" - If the input is valid, the workflow moves to the next step: `{success_step}`.\n"
-            transition += f" - If the input is invalid, it moves to: `{error_step}`."
-            return transition
+            return f"Moves to `{success_step}` if input is valid, otherwise to `{error_step}`."
         elif task_type == "plugin":
-            transitions_info = []
-            transitions_info.append(f"\n\nThe plugin transition to the next steps are:")
-
-            for t in task["transitions"]:
+            transitions_info = ["The plugin transitions to the next steps are:\n"]
+            transitions_info.append(
+                "| Transition Code | Description | Next Step |\n|---|---|---|\n"
+            )
+            for t in task.get("transitions", []):
                 transition_code = t.get("code", "Unknown")
                 transition_goto = t.get("goto", "Unknown")
                 transition_description = t.get("description", "No description")
                 transitions_info.append(
-                    f"\n\n - If {transition_description}({transition_code}), then go to `{transition_goto}`"
+                    f"| `{transition_code}` | {transition_description} | `{transition_goto}` |"
                 )
             return "\n".join(transitions_info)
         elif task_type == "condition":
-            transitions_info = []
+            transitions_info = ["The conditions to transition to the next steps are:\n"]
             transitions_info.append(
-                f"\n\nThe conditions to transition to the next steps are:\n\n"
+                "| Condition | Description | Next Step |\n|---|---|---|\n"
             )
-            for t in task["conditions"]:
+            for t in task.get("conditions", []):
                 transition_code = t.get("condition", "Unknown")
                 transition_goto = t.get("goto", "Unknown")
-
+                transition_description = t.get("description", "No description")
                 transitions_info.append(
-                    f"If `{transition_code}` then go to `{transition_goto}`.\n\n"
+                    f"| `{transition_code}` | `{transition_description}` | `{transition_goto}` |"
                 )
-            return "\n - ".join(transitions_info)
-        return ""  # "No specific conditions to transition to another step."
+            return "\n".join(transitions_info)
+
+        return "No specific transitions."
 
     nlr = []
 
     if "dsl" in dsl:
-        nlr.append("\n## Workflow")
+        index = 0
         for task in dsl["dsl"]:
             if task.get("task_type") == "start" or task.get("task_type") == "end":
                 continue
-            nlr.append(f"\n### Step: {task.get('name', 'Unknown Step')}")
-            task_info = get_task_info(task)
+            index += 1
+            task_info = get_task_info(task, index)
             task_explanation = get_task_explanation(task)
             transitions_explanation = get_transitions_explanation(task)
-            nlr.append(f"{task_info}\n{task_explanation}\n{transitions_explanation}")
+            nlr.append(
+                f"{task_info}\n\n{task_explanation}\n\n{transitions_explanation}"
+            )
 
-    if "config_variables" in dsl:
-        nlr.append("## Configuration Variables")
-        for var in dsl["config_variables"]:
-            nlr.append(get_config_variable_info(var))
+    if "config_vars" in dsl:
+        nlr.append("## 2. Configuration Variables")
+        for index, var in enumerate(dsl["config_vars"], start=1):
+            nlr.append(get_config_variable_info(var, index))
 
     if "variables" in dsl:
-        nlr.append("\n## Variables")
-        for var in dsl["variables"]:
-            nlr.append(get_variable_info(var))
+        nlr.append("## 3. Variables")
+        for index, var in enumerate(dsl["variables"], start=1):
+            nlr.append(get_variable_info(var, index))
+
     nlr_str = "\n".join(nlr)
-    return nlr_str.replace("\n\n", "\n").strip()
-
-
-if __name__ == "__main__":
-    # with open("addition-logic/step1/gold.json") as f:
-    with open("car-wash/step1/gold.json") as f:
-        dsl = json.load(f)
-    print(generate_nlr(dsl))
+    return nlr_str.strip()
