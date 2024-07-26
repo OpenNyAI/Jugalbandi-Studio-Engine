@@ -97,36 +97,31 @@ def generate_nlr(dsl):
             error_step = task.get("error_goto", "None")
             return f"Moves to `{success_step}` if input is valid, otherwise to `{error_step}`."
         elif task_type == "plugin":
-            transitions_info = [
-                "<p>The plugin transitions to the next steps are:</p>\n"
-            ]
-            transitions_info.append(
-                "<table>\n<tr><th>Transition Code</th><th>Description</th><th>Next Step</th></tr>\n"
+            transitions_info = "The plugin transitions to the next steps are:\n\n"
+            transitions_info += (
+                "\n| Transition Code |  Description | Next Step |\n|---|---|---|\n"
             )
-            for t in task.get("transitions", []):
-                transition_code = t.get("code", "Unknown")
-                transition_goto = t.get("goto", "Unknown")
-                transition_description = t.get("description", "No description")
-                transitions_info.append(
-                    f"<tr><td>{transition_code}</td><td>{transition_description}</td><td>{transition_goto}</td></tr>\n"
-                )
-            transitions_info.append("</table>")
+            transition = "\n".join(
+                [
+                    f"| {t.get('code', 'Unknown')} | {t.get('description', 'No description')} | {t.get('goto', 'Unknown')} |"
+                    for t in task.get("transitions", [])
+                ]
+            )
+            transitions_info += transition
             return "".join(transitions_info)
         elif task_type == "condition":
-            transitions_info = [
-                "<p>The conditions to transition to the next steps are:</p>\n"
-            ]
-            transitions_info.append(
-                "<table>\n<tr><th>Condition</th><th>Description</th><th>Next Step</th></tr>\n"
+            transitions_info = "The conditions to transition to the next steps are:\n\n"
+            transitions_info += (
+                "\n| Condition | Description | Next Step |\n|---|---|---|\n"
             )
-            for t in task.get("conditions", []):
-                transition_code = t.get("condition", "Unknown")
-                transition_goto = t.get("goto", "Unknown")
-                transition_description = t.get("description", "No description")
-                transitions_info.append(
-                    f"<tr><td>{transition_code}</td><td>{transition_description}</td><td>{transition_goto}</td></tr>\n"
-                )
-            transitions_info.append("</table>")
+
+            transition = "\n".join(
+                [
+                    f"| {t.get('condition', 'Unknown')} | {t.get('description', 'No description')} | {t.get('goto', 'Unknown')} |"
+                    for t in task.get("conditions", [])
+                ]
+            )
+            transitions_info += transition
             return "".join(transitions_info)
 
         return "No specific transitions."
