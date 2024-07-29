@@ -11,13 +11,6 @@
         "containerName": {
             "type": "string"
         },
-        "imageType": {
-            "type": "string",
-            "allowedValues": [
-                "Public",
-                "Private"
-            ]
-        },
         "imageName": {
             "type": "string"
         },
@@ -64,12 +57,6 @@
         "KAFKA_USE_SASL": {
             "type": "string"
         },
-        "KAFKA_PRODUCER_USERNAME": {
-            "type": "string"
-        },
-        "KAFKA_PRODUCER_PASSWORD": {
-            "type": "secureString"
-        },
         "KAFKA_CONSUMER_USERNAME": {
             "type": "string"
         },
@@ -80,7 +67,7 @@
             "type": "string"
         },
         "AZURE_OPENAI_API_KEY": {
-            "type": "string"
+            "type": "secureString"
         },
         "AZURE_OPENAI_API_VERSION": {
             "type": "string"
@@ -88,9 +75,12 @@
         "AZURE_OPENAI_ENDPOINT": {
             "type": "string"
         },
-        "ipAddressType": {
+        "FAST_MODEL": {
             "type": "string"
         },
+        "SLOW_MODEL": {
+            "type": "string"
+        },        
         "ports": {
             "type": "array"
         }
@@ -124,14 +114,6 @@
                                     "value": "[parameters('KAFKA_USE_SASL')]"
                                 },
                                 {
-                                    "name": "KAFKA_PRODUCER_USERNAME",
-                                    "value": "[parameters('KAFKA_PRODUCER_USERNAME')]"
-                                },
-                                {
-                                    "name": "KAFKA_PRODUCER_PASSWORD",
-                                    "secureValue": "[parameters('KAFKA_PRODUCER_PASSWORD')]"
-                                },
-                                {
                                     "name": "KAFKA_CONSUMER_USERNAME",
                                     "value": "[parameters('KAFKA_CONSUMER_USERNAME')]"
                                 },
@@ -154,6 +136,14 @@
                                 {
                                     "name": "AZURE_OPENAI_ENDPOINT",
                                     "value": "[parameters('AZURE_OPENAI_ENDPOINT')]"
+                                },
+                                {
+                                    "name": "FAST_MODEL",
+                                    "value": "[parameters('FAST_MODEL')]"
+                                },
+                                {
+                                    "name": "SLOW_MODEL",
+                                    "value": "[parameters('SLOW_MODEL')]"
                                 }
                             ],
                             "ports": "[parameters('ports')]"
@@ -169,11 +159,7 @@
                         "username": "[parameters('imageUsername')]",
                         "password": "[parameters('imagePassword')]"
                     }
-                ],
-                "ipAddress": {
-                    "type": "[parameters('ipAddressType')]",
-                    "ports": "[parameters('ports')]"
-                }
+                ]                
             },
             "tags": {}
         }
