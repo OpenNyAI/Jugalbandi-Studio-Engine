@@ -261,6 +261,9 @@ class JBEngine(PwRStudioEngine):
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
         nlr = generate_nlr(nl2dsl.dsl)
 
+        # generate mermaid chart
+        chart = generate_mermaid_chart(nl2dsl.dsl["dsl"])
+
         self_inst = self
 
         async def async_print(x):
@@ -276,9 +279,9 @@ class JBEngine(PwRStudioEngine):
 
         if nlr is not None:
             self._project.representations["description"].text = nlr
-
-        # if d.change.diagram is not None:
-        #     self._project.representations['diagram'].text = d.change.diagram
+        
+        if chart is not None:
+            self._project.representations["diagram"].text = chart
 
         if code is not None:
             self._project.representations["code"].text = code
