@@ -2,38 +2,38 @@ import json
 
 colors = {
     "start": {
-        "fill": "#b0c4de",
-        "stroke": "#778899",
+        "fill": "#F9E4E0",
+        "stroke": "#EC553A",
         "text_color": "#000000",
     },  # LightSteelBlue for start
     "print": {
-        "fill": "#98fb98",
+        "fill": "#61C882",
         "stroke": "#2e8b57",
         "text_color": "#000000",
     },  # PaleGreen for print
     "input": {
-        "fill": "#add8e6",
-        "stroke": "#4682b4",
+        "fill": "#DBEBFD",
+        "stroke": "#8ABAF2",
         "text_color": "#000000",
     },  # LightBlue for input
     "operation": {
-        "fill": "#d3d3d3",
-        "stroke": "#a9a9a9",
+        "fill": "#F5EAFF",
+        "stroke": "#8F4CD2",
         "text_color": "#000000",
     },  # LightGray for operation
     "condition": {
-        "fill": "#d3d3d3",
-        "stroke": "#a9a9a9",
+        "fill": "#FEEAC5",
+        "stroke": "#F2B035",
         "text_color": "#000000",
     },  # LightGray for condition
     "plugin": {
-        "fill": "#dda0dd",
-        "stroke": "#ba55d3",
+        "fill": "#FFEEFC",
+        "stroke": "#FEA8F0",
         "text_color": "#000000",
     },  # Plum for plugin
     "end": {
-        "fill": "#b0c4de",
-        "stroke": "#778899",
+        "fill": "#F9E4E0",
+        "stroke": "#EC553A",
         "text_color": "#000000",
     },  # LightSteelBlue for end
 }
@@ -58,22 +58,32 @@ def generate_mermaid_chart(flow):
         task_type = task.get("task_type")
         if task_type == "print":
             label = task.get("message", task.get("name"))
-            label = split_long_text(label)
+            label = split_long_text(label, 5)
+            label = f'("{label}")'
         elif task_type == "input":
             label = task.get("message", task.get("name"))
-            label = split_long_text(label)
+            label = split_long_text(label, 5)
+            label = f'[/"{label}"/]'
         elif task_type == "operation":
             label = task.get("description", task.get("name"))
             label = label.replace("\n", "<br>")
             label += f"<br>{task.get('expression')}"
+            label = split_long_text(label, 5)
+            label = f'["{label}"]'
         elif task_type == "condition":
             label = task.get("description", task.get("name"))
+            label = split_long_text(label, 5)
+            label = f'{"{label}"}'
         elif task_type == "plugin":
             label = task.get("description", task.get("name"))
+            label = split_long_text(label, 5)
+            label = f'[["{label}"]]'
         else:
             label = task.get("name")
+            label = split_long_text(label, 5)
+            label = f'[/"{label}"/]'
 
-        node = f'`{task_id}`["{label}"]:::task{task_type}'
+        node = f"`{task_id}`{label}:::task{task_type}"
         nodes.append(node)
         return task_id
 
@@ -110,7 +120,7 @@ def generate_mermaid_chart(flow):
                     condition = transition.get("condition_description", condition)
                 if next_task:
                     condition = condition.replace('"', '\\"')
-                    condition = split_long_text(condition)
+                    condition = split_long_text(condition, 3)
                     links.append(
                         f'`{task_id}` {default_arrow} |"{condition}"| `{next_task}`'
                     )
@@ -127,7 +137,7 @@ def generate_mermaid_chart(flow):
                 next_task = transition["goto"]
                 if next_task:
                     condition = condition.replace('"', '\\"')
-                    condition = split_long_text(condition)
+                    condition = split_long_text(condition, 3)
                     links.append(
                         f'`{task_id}` {default_arrow}|"{condition}"| `{next_task}`'
                     )
