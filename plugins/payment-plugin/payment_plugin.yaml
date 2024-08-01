@@ -7,8 +7,8 @@ CREDENTIALS:
     - RAZORPAY_CLIENT_SECRET (type:str) : Razorpay client secret for the payment gateway
 
 INPUTS:
-    - AMOUNT (type:int) : The amount to be collected from the user
-    - REASON (type:str) : The reason for the payment
+    - amount (type:int) : The amount to be collected from the user
+    - reason (type:str) : The reason for the payment
 
 OUTPUT:
     - txn_id (type:str): A unique transaction ID generated for the payment transaction

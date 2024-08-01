@@ -37,10 +37,10 @@ def request_payment(amount: int, client_id: str, client_secret: str, reference_i
 
 
 class PaymentPluginReturnStatus(Enum):
-    SUCCESS = "success"
-    CANCELLED_BY_USER = "cancelled_by_user"
-    EXPIRED = "expired"
-    SERVER_ERROR = "server_error"
+    SUCCESS = "SUCCESS"
+    CANCELLED_BY_USER = "CANCELLED_BY_USER"
+    EXPIRED = "EXPIRED"
+    SERVER_ERROR = "SERVER_ERROR"
 
 
 class PaymentPluginVariables(Variables):
