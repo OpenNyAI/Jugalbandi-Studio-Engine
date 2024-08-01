@@ -1,0 +1,20 @@
+name: PaymentPlugin
+description: |
+    The name of the plugin is payment. This plugin takes payment amount to make a payment for a specific reason.
+
+CREDENTIALS:
+    - RAZORPAY_CLIENT_ID (type:str) : Razorpay client ID for the payment gateway
+    - RAZORPAY_CLIENT_SECRET (type:str) : Razorpay client secret for the payment gateway
+
+INPUTS:
+    - AMOUNT (type:int) : The amount to be collected from the user
+    - REASON (type:str) : The reason for the payment
+
+OUTPUT:
+    - txn_id (type:str): A unique transaction ID generated for the payment transaction
+        
+RETURN STATUS:
+    - SUCCESS: Indicates that the payment was successfully collected.
+    - CANCELLED_BY_USER: Indicates cancelled by the user.
+    - EXPIRED: Indicates that the payment link has expired.
+    - SERVER_ERROR: Indicates that there was an error in the server.
