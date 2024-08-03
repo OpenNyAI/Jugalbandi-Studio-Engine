@@ -70,12 +70,16 @@ def generate_mermaid_chart(flow):
             label += f"<br>{task.get('expression')}"
             label = split_long_text(label, 5)
             label = f'["{label}"]'
+            label = split_long_text(label, 5)
+            label = f'["{label}"]'
         elif task_type == "condition":
             label = task.get("description", task.get("name"))
             label = split_long_text(label, 5)
             label = f"{{{label}}}"
         elif task_type == "plugin":
             label = task.get("description", task.get("name"))
+            label = split_long_text(label, 5)
+            label = f'[["{label}"]]'
             label = split_long_text(label, 5)
             label = f'[["{label}"]]'
         else:
