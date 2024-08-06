@@ -168,9 +168,9 @@ class JBEngine(PwRStudioEngine):
                 status_update_callback(f"All steps have been applied successfully!🎉")
                 status_update_callback(f"Working on the final touches.")
             elif event == "global_variables_updated":
-                status_update_callback(f"Global variables updated!")
+                status_update_callback(f"Updating Entries!")
             elif event == "config_vars_updated":
-                status_update_callback(f"Config variables updated!")
+                status_update_callback(f"Updating Entries!")
             elif event == "dsl_updated_successfully":
                 status_update_callback(f"Program update completed!")
 
