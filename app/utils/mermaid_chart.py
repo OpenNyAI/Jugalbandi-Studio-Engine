@@ -5,37 +5,37 @@ colors = {
         "fill": "#F9E4E0",
         "stroke": "#EC553A",
         "text_color": "#000000",
-    },  # LightSteelBlue for start
+    },
     "print": {
-        "fill": "#61C882",
+        "fill": "#9AE1B1",
         "stroke": "#2e8b57",
         "text_color": "#000000",
-    },  # PaleGreen for print
+    },
     "input": {
         "fill": "#DBEBFD",
         "stroke": "#8ABAF2",
         "text_color": "#000000",
-    },  # LightBlue for input
+    },
     "operation": {
         "fill": "#F5EAFF",
         "stroke": "#8F4CD2",
         "text_color": "#000000",
-    },  # LightGray for operation
+    },
     "condition": {
         "fill": "#FEEAC5",
         "stroke": "#F2B035",
         "text_color": "#000000",
-    },  # LightGray for condition
+    },
     "plugin": {
         "fill": "#FFEEFC",
         "stroke": "#FEA8F0",
         "text_color": "#000000",
-    },  # Plum for plugin
+    },
     "end": {
         "fill": "#F9E4E0",
         "stroke": "#EC553A",
         "text_color": "#000000",
-    },  # LightSteelBlue for end
+    },
 }
 
 success_arrow = "-->"
@@ -70,18 +70,22 @@ def generate_mermaid_chart(flow):
             label += f"<br>{task.get('expression')}"
             label = split_long_text(label, 5)
             label = f'["{label}"]'
+            label = split_long_text(label, 5)
+            label = f'["{label}"]'
         elif task_type == "condition":
             label = task.get("description", task.get("name"))
             label = split_long_text(label, 5)
-            label = f'{"{label}"}'
+            label = f"{{{label}}}"
         elif task_type == "plugin":
             label = task.get("description", task.get("name"))
+            label = split_long_text(label, 5)
+            label = f'[["{label}"]]'
             label = split_long_text(label, 5)
             label = f'[["{label}"]]'
         else:
             label = task.get("name")
             label = split_long_text(label, 5)
-            label = f'[/"{label}"/]'
+            label = f'["........{label}........"]'
 
         node = f"`{task_id}`{label}:::task{task_type}"
         nodes.append(node)
