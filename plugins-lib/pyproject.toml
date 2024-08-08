@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "plugins"
+version = "0.1.0"
+description = "A plugin library for appointments"
+authors = ["Kanak Raj <kanak8278@gmail.com>"]
+packages = [{ include = "plugins" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
