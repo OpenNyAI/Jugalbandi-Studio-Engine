@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterable
 
 
 def generate_nlr(dsl):
@@ -28,9 +29,11 @@ def generate_nlr(dsl):
             plugin_info = task.get("plugin", {})
             task_info.append(f"**Uses Plugin**: {plugin_info.get('name', 'Unknown')}")
 
-        if "options" in task:
+        if "options" in task and isinstance(task["options"], Iterable):
             options = ", ".join(task["options"])
             task_info.append(f"**Options**: {options}")
+        elif "options" in task:
+            task_info.append(f"**Options**: {task['options']}")
 
         return "\n".join(task_info)
 
