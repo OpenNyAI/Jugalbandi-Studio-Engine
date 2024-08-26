@@ -192,7 +192,7 @@ class CodeGen:
         # if correct expression has single = then it is assignment
         # else return the expression as it is
         if "=" in correct_expr:
-            correct_expr = """
+            correct_expr = f"""
             {correct_expr}
             return self.variables.{str(task['write_variable'])}
 """
@@ -215,7 +215,9 @@ class CodeGen:
 
         for task in self.json_data["dsl"]:
             # self.states Additions
-            if task["task_type"] == "start" or task["task_type"] == "end":
+            if task["task_type"] == "start":
+                self.states.append("zero")
+            elif task["task_type"] == "end":
                 self.states.append(task["name"])
             elif task["task_type"] == "input":
                 display_state = f"{task['name']}_display"
@@ -319,10 +321,15 @@ class CodeGen:
         for task in self.json_data["dsl"]:
             # self.transitions Additions
             if task["task_type"] == "start" or task["task_type"] == "end":
+                goto = task["goto"]
+                if goto is None:
+                    continue
+                if goto and goto not in self.states and goto != "end":
+                    goto = f"{goto}_display"
                 self.transitions.append(
                     {
-                        "source": task["name"],
-                        "dest": task["goto"],
+                        "source": task["name"] if task["task_type"] == "end" else "zero",
+                        "dest": goto,
                         "trigger": "next",
                     }
                 )
@@ -438,7 +445,7 @@ import re
 class {self.fsm_class_name}(AbstractFSM):
     states = {self.states}
     transitions = {self.transitions}
-    conditions = {list(self.conditions)}
+    conditions = {set(self.conditions)}
     output_variables = set()
     variable_names = {self.fsm_class_name}Variables
 
