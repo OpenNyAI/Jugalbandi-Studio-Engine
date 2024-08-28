@@ -1,5 +1,4 @@
 import json
-from math import e
 import re
 import ast
 
@@ -77,6 +76,10 @@ class CodeGen:
                 default = 0.0
             elif var_type == "str":
                 default = None
+            elif var_type == "Dict":
+                default = {}
+            elif var_type == "List":
+                default = []
             class_def += f"    {name}: Optional[{var_type}] = {default}\n"
 
             # if validation:
@@ -102,9 +105,8 @@ class CodeGen:
             message = None
         method_code = f"""
     def on_enter_{state_name}(self):
-        from plugins import {plugin["name"]}
         self._on_enter_plugin(
-            plugin={plugin["name"]},
+            plugin="{plugin["name"]}",
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
             message="{message}"        
@@ -289,6 +291,7 @@ class CodeGen:
                     )
             elif task["task_type"] == "plugin":
                 plugin_state = task["name"]
+                plugin_name = task["plugin"]["name"]
                 self.states.append(plugin_state)
                 state_transitions = task["transitions"]
                 for idx, transition in enumerate(state_transitions):
@@ -297,6 +300,7 @@ class CodeGen:
                         {
                             "name": f"is_{plugin_state}_{transition['code']}",
                             "condition": transition["code"],
+                            "plugin_name": plugin_name
                         }
                     )
 
@@ -328,7 +332,9 @@ class CodeGen:
                     goto = f"{goto}_display"
                 self.transitions.append(
                     {
-                        "source": task["name"] if task["task_type"] == "end" else "zero",
+                        "source": (
+                            task["name"] if task["task_type"] == "end" else "zero"
+                        ),
                         "dest": goto,
                         "trigger": "next",
                     }
@@ -434,11 +440,22 @@ from jb_manager_bot import AbstractFSM
 from jb_manager_bot.data_models import FSMOutput
 import re
 """
+        plugin_names = set()
+        for task in self.json_data["dsl"]:
+            if task["task_type"] == "plugin":
+                plugin_names.add(task["plugin"]["name"])
+                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, {task["plugin"]["name"]}ReturnStatus
+"""
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
         pydantic_code = "\n".join(["" + l for l in pydantic_code.split("\n")])
 
+        plugin_init_code = ""
+        for plugin in plugin_names:
+            plugin_init_code += f"""
+            "{plugin}": {plugin}(send_message=send_message),
+        """
         self.code += f"""
 {pydantic_code}
 
@@ -460,7 +477,9 @@ class {self.fsm_class_name}(AbstractFSM):
             if not credentials.get(variable["name"]):
                 raise ValueError(f"Missing credential: {{variable['name']}}")
             self.credentials[variable["name"]] = credentials.get(variable["name"])
-        self.plugins: Dict[str, AbstractFSM] = {{}}
+        self.plugins: Dict[str, AbstractFSM] = {{
+            {plugin_init_code}
+        }}
         self.variables = self.variable_names()
         super().__init__(send_message=send_message)
     """
@@ -512,7 +531,7 @@ class {self.fsm_class_name}(AbstractFSM):
         for method in self.plugin_error_methods:
             self.code += f"""
     def {method["name"]}(self):
-        return self._plugin_error_code_validation("{method["condition"]}")
+        return self._plugin_error_code_validation({method["plugin_name"]}ReturnStatus.{method["condition"]})
         """
         return self.code
 
