@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "jb-payment"
+version = "0.1.2"
+description = ""
+authors = ["Shrey Pandey <shreypandey1509@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+jb-manager-bot = "^0.2.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
