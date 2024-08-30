@@ -23,12 +23,12 @@ $ cd studio-and-manager
 ```bash
 $ bash scripts/run.sh kafka postgres
 ```
-Wait for topics to be created and database to be initialised.
-6. Spawn a new terminal inside Jugalbandi Studio Engine repo.
-7. Run the following command.
+6. Wait for topics to be created and database to be initialised.
+7. Spawn a new terminal inside Jugalbandi Studio Engine repo.
+8. Run the following command.
 ```bash
 $ cd studio-and-manager
 $ bash scripts/run.sh server engine studio api channel language flow frontend
 ```
-8. Go to http://localhost:4173 to access Jugalbandi Studio.
-9. Go to http://localhost:4179 to access Jugalbandi Manager.
+9. Go to http://localhost:4173 to access Jugalbandi Studio.
+10. Go to http://localhost:4179 to access Jugalbandi Manager.
