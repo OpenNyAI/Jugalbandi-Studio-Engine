@@ -40,6 +40,8 @@ cd ../../PwR-Studio/lib && poetry install && poetry build
 cd -
 cp ../../PwR-Studio/lib/dist/*.whl ./server/dist  
 
+mkdir -p ../../PwR-Studio/server/dist
+cp ./server/dist/*.whl ../../PwR-Studio/server/dist/
 
 # Create necessary directories
 # mkdir -p ./media
