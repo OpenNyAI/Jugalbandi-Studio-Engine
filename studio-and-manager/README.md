@@ -1,6 +1,6 @@
 # Jugalbandi Studio Engine
 
-Jugalbandi Studio Engine provides you an integration between the [Jugalbandi Studio] (www.github.com/openyai/jugalbandi-studio) and the [Jugalbandi Manager] (www.github.com/openyai/jugalbandi-manager) projects.
+Jugalbandi Studio Engine provides you an integration between the [Jugalbandi Studio](www.github.com/openyai/jugalbandi-studio) and the [Jugalbandi Manager](www.github.com/openyai/jugalbandi-manager) projects.
 
 Jugalbandi Studio is for building Jugalbandi Apps, built over the PwR-NL2DSL and PwR-Studio.
 Jugalbandi Manager is for hosting the Jugalbandi Apps build on studio.
