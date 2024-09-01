@@ -132,8 +132,10 @@ class CodeGen:
         msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
         brace_ranges = [m.span() for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
         for pos_s, pos_e in brace_ranges[::-1]:
-            if message[pos_s + 1:pos_e - 1] in self.variables:
-                message = message[:pos_s + 1] + "self.variables." + message[pos_s+1:]
+            if message[pos_s + 1 : pos_e - 1] in self.variables:
+                message = (
+                    message[: pos_s + 1] + "self.variables." + message[pos_s + 1 :]
+                )
 
         if options:
             method_code = f"""
@@ -163,7 +165,7 @@ class CodeGen:
         """
         return method_code
 
-    def generate_on_enter_logic(self, task, validation_expression, should_validate=True):
+    def generate_on_enter_logic(self, task, validation_expression):
         logic_state = f"{task['name']}_logic"
         options = task.get("options", None)
         method_code = f"""
@@ -172,23 +174,25 @@ class CodeGen:
             message="{task['message']}",
             write_var="{task['write_variable']}",
             options={options},
-            validation="{validation_expression}",
-            should_validate={should_validate}
+            validation="{validation_expression}"
         )
     """
         return method_code
 
     def generate_on_enter_assign(self, task, validation_expression):
         logic_state = f"{task['name']}"
-        
+
         varlist = self.variables
+
         class VarTweaker(ast.NodeTransformer):
             def visit_Name(self, node):
                 if node.id in varlist:
-                    return ast.Name(**{**node.__dict__, 'id':"self.variables." + node.id})
+                    return ast.Name(
+                        **{**node.__dict__, "id": "self.variables." + node.id}
+                    )
                 else:
                     return node
-        
+
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
 
         # if correct expression has single = then it is assignment
@@ -237,7 +241,9 @@ class CodeGen:
                     )
 
                 validation = self.variables[task["write_variable"]]["validation"]
-                should_validate = task["should_validate"] if "should_validate" in task else True
+                should_validate = (
+                    task["should_validate"] if "should_validate" in task else True
+                )
 
                 self.validation_methods.append(
                     (method_name, task["write_variable"], validation)
@@ -256,7 +262,7 @@ class CodeGen:
                         "type": "logic",
                         "state": task,
                         "validation_expression": validation,
-                        "should_validate": should_validate
+                        "should_validate": should_validate,
                     }
                 )
             elif task["task_type"] == "print":
@@ -302,7 +308,7 @@ class CodeGen:
                         {
                             "name": f"is_{plugin_state}_{transition['code']}",
                             "condition": transition["code"],
-                            "plugin_name": plugin_name
+                            "plugin_name": plugin_name,
                         }
                     )
 
@@ -369,11 +375,7 @@ class CodeGen:
                             "dest": input_state,
                             "trigger": "next",
                         },
-                        {
-                            "source": input_state,
-                            "dest": logic_state,
-                            "trigger": "next"
-                        }
+                        {"source": input_state, "dest": logic_state, "trigger": "next"},
                     ]
                 )
                 if goto is None:
@@ -516,7 +518,7 @@ class {self.fsm_class_name}(AbstractFSM):
                 self.code += self.generate_on_enter_input(method["state"])
             elif method["type"] == "logic":
                 self.code += self.generate_on_enter_logic(
-                    method["state"], method["validation_expression"], method.get("should_validate", True)
+                    method["state"], method["validation_expression"]
                 )
             elif method["type"] == "condition":
                 self.code += self.generate_on_enter_condition(method["state"])
@@ -541,4 +543,3 @@ class {self.fsm_class_name}(AbstractFSM):
         return self._plugin_error_code_validation({method["plugin_name"]}ReturnStatus.{method["condition"]})
         """
         return self.code
-

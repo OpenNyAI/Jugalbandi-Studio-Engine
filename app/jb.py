@@ -21,7 +21,8 @@ from pwr_studio.engines import PwRStudioEngine
 from pwr_studio.types import ChangedRepresentation, Representation, Response
 
 # temporary lib imports
-from jb_manager_bot import AbstractFSM, FSMOutput
+from jb_manager_bot import AbstractFSM
+from jb_manager_bot.data_models import FSMOutput, MessageType
 
 # need to check and remove the Message class from here
 class Message(BaseModel):
@@ -34,7 +35,6 @@ from .utils.codegen import CodeGen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
-from .utils.convert_dsl_for_test import convert_dsl
 from .utils.question_answer import get_answer_or_instruction
 
 # test code runtime
@@ -262,18 +262,30 @@ class JBEngine(PwRStudioEngine):
 
         msg_queue = []
         def fsm_callback(x: FSMOutput):
-            if x.message_data.header:
-                msg_queue.append(x.message_data.header)
-            if x.message_data.body:
-                msg_queue.append(x.message_data.body)
-            if x.message_data.footer:
-                msg_queue.append(x.message_data.footer)
-            if x.options_list:
-                #msg_queue.append('Enter one of the values:\n\n' + '\n'.join(sorted([o.title for o in x.options_list])))
-                pass
-            if x.media_url:
-                msg_queue.append(x.media_url)
-
+            if x.message.message_type == MessageType.TEXT:
+                msg_queue.append(x.message.text.body)
+            if x.message.message_type == MessageType.IMAGE:
+                msg_queue.append(x.message.image.media_url)
+                msg_queue.append(x.message.image.caption)
+            if x.message.message_type == MessageType.BUTTON:
+                msg_queue.append(x.message.button.header)
+                msg_queue.append(x.message.button.text)
+                msg_queue.append(x.message.button.footer)
+                options = {
+                    "type": "dropdown",
+                    "options": [op.option_text for op in x.message.button.options]
+                }
+                msg_queue.append(f'{json.dumps(options)}\xa1')
+            if x.message.message_type == MessageType.OPTION_LIST:
+                msg_queue.append(x.message.option_list.header)
+                msg_queue.append(x.message.option_list.text)
+                msg_queue.append(x.message.option_list.footer)
+                options = {
+                    "type": "dropdown",
+                    "options": [op.option_text for op in x.message.option_list.options]
+                }
+                msg_queue.append(f'{json.dumps(options)}\xa1')
+            
         def get_input_parts(x: str):
             if x is not None:
                 if '\xa1' in x:
@@ -298,9 +310,8 @@ class JBEngine(PwRStudioEngine):
 
         is_bot_end = False
         try:
-            test_dsl = convert_dsl(self._project.representations["dsl"].text)
-            dsl_obj = json.loads(test_dsl)
-            test_code = CodeGen(json_data=dsl_obj).generate_fsm_code()
+            dsl_obj = json.loads(self._project.representations["dsl"].text)
+            test_code = self._project.representations["code"].text
 
             # load class via exec
             #gen_class_dict = {}
