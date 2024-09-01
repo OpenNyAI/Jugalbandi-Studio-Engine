@@ -1,5 +1,4 @@
 import json
-from math import e
 import re
 import ast
 
@@ -10,13 +9,6 @@ import ast
 #     "variables": [],0
 #     "dsl": []
 # }
-azure_vars = [
-    "AZURE_OPENAI_API_KEY",
-    "AZURE_OPENAI_ENDPOINT",
-    "AZURE_OPENAI_API_VERSION",
-    "FAST_MODEL",
-    "SLOW_MODEL",
-]
 
 
 class CodeGen:
@@ -84,6 +76,10 @@ class CodeGen:
                 default = 0.0
             elif var_type == "str":
                 default = None
+            elif var_type == "Dict":
+                default = {}
+            elif var_type == "List":
+                default = []
             class_def += f"    {name}: Optional[{var_type}] = {default}\n"
 
             # if validation:
@@ -109,12 +105,8 @@ class CodeGen:
             message = None
         method_code = f"""
     def on_enter_{state_name}(self):
-        # {plugin["name"]} is installed as a module
-        # {plugin["name"]} module has {plugin["name"]}.py file
-        # The file implements plugin as function `invoke_plugin`
-        # `invoke_plugin` is mapped to {plugin["name"]}_func during imports
         self._on_enter_plugin(
-            plugin={plugin["name"]}_func,
+            plugin="{plugin["name"]}",
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
             message="{message}"
@@ -202,7 +194,7 @@ class CodeGen:
         # if correct expression has single = then it is assignment
         # else return the expression as it is
         if "=" in correct_expr:
-            correct_expr = """
+            correct_expr = f"""
             {correct_expr}
             return self.variables.{str(task['write_variable'])}
 """
@@ -225,7 +217,9 @@ class CodeGen:
 
         for task in self.json_data["dsl"]:
             # self.states Additions
-            if task["task_type"] == "start" or task["task_type"] == "end":
+            if task["task_type"] == "start":
+                self.states.append("zero")
+            elif task["task_type"] == "end":
                 self.states.append(task["name"])
             elif task["task_type"] == "input":
                 display_state = f"{task['name']}_display"
@@ -299,6 +293,7 @@ class CodeGen:
                     )
             elif task["task_type"] == "plugin":
                 plugin_state = task["name"]
+                plugin_name = task["plugin"]["name"]
                 self.states.append(plugin_state)
                 state_transitions = task["transitions"]
                 for idx, transition in enumerate(state_transitions):
@@ -307,6 +302,7 @@ class CodeGen:
                         {
                             "name": f"is_{plugin_state}_{transition['code']}",
                             "condition": transition["code"],
+                            "plugin_name": plugin_name
                         }
                     )
 
@@ -331,10 +327,17 @@ class CodeGen:
         for task in self.json_data["dsl"]:
             # self.transitions Additions
             if task["task_type"] == "start" or task["task_type"] == "end":
+                goto = task["goto"]
+                if goto is None:
+                    continue
+                if goto and goto not in self.states and goto != "end":
+                    goto = f"{goto}_display"
                 self.transitions.append(
                     {
-                        "source": task["name"],
-                        "dest": task["goto"],
+                        "source": (
+                            task["name"] if task["task_type"] == "end" else "zero"
+                        ),
+                        "dest": goto,
                         "trigger": "next",
                     }
                 )
@@ -440,25 +443,33 @@ class CodeGen:
         self.code = f"""
 from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
 from pydantic import BaseModel, Field
-
-from jb_manager_bot import (
-    AbstractFSM,
-    FSMOutput,
-)
+from jb_manager_bot import AbstractFSM
+from jb_manager_bot.data_models import FSMOutput
 import re
+"""
+        plugin_names = set()
+        for task in self.json_data["dsl"]:
+            if task["task_type"] == "plugin":
+                plugin_names.add(task["plugin"]["name"])
+                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, {task["plugin"]["name"]}ReturnStatus
 """
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
         pydantic_code = "\n".join(["" + l for l in pydantic_code.split("\n")])
 
+        plugin_init_code = ""
+        for plugin in plugin_names:
+            plugin_init_code += f"""
+            "{plugin}": {plugin}(send_message=send_message),
+        """
         self.code += f"""
 {pydantic_code}
 
 class {self.fsm_class_name}(AbstractFSM):
     states = {self.states}
     transitions = {self.transitions}
-    conditions = {list(self.conditions)}
+    conditions = {set(self.conditions)}
     output_variables = set()
     variable_names = {self.fsm_class_name}Variables
 
@@ -473,12 +484,9 @@ class {self.fsm_class_name}(AbstractFSM):
             if not credentials.get(variable["name"]):
                 raise ValueError(f"Missing credential: {{variable['name']}}")
             self.credentials[variable["name"]] = credentials.get(variable["name"])
-        for variable in {azure_vars}:
-            if not credentials.get(variable):
-                raise ValueError(f"Missing credential: {{variable}}")
-            self.credentials[variable] = credentials.get(variable)
-
-        self.plugins: Dict[str, AbstractFSM] = {{}}
+        self.plugins: Dict[str, AbstractFSM] = {{
+            {plugin_init_code}
+        }}
         self.variables = self.variable_names()
         super().__init__(send_message=send_message)
     """
@@ -530,7 +538,7 @@ class {self.fsm_class_name}(AbstractFSM):
         for method in self.plugin_error_methods:
             self.code += f"""
     def {method["name"]}(self):
-        return self._plugin_error_code_validation("{method["condition"]}")
+        return self._plugin_error_code_validation({method["plugin_name"]}ReturnStatus.{method["condition"]})
         """
         return self.code
 

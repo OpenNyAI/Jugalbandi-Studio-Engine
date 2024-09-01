@@ -172,22 +172,28 @@ class JBEngine(PwRStudioEngine):
         def status_update_callback_wrapper(event, data):
             if event == "plan_generated":
                 status_update_callback(
-                    f"Plan successfully generated! 🎉 ({len(data)} steps)\n\n"
+                    f"Plan successfully generated with {len(data)} steps!🎉 \n\n"
                 )
-                status_update_callback(f"Applying the plan...")
+                status_update_callback(f"Updating the program.")
             elif event == "step_update":
                 step = data["step"]
                 step_number = data["step_number"]
+                total_steps = data["total_steps"]
                 status_update_callback(
-                    f"Applying step {step_number}({step['type']}) of the plan for task {step['task_id']}..."
+                    f"Executing step {step_number}/{total_steps}. Task: {step['task_id']} of type {step['type']}."
                 )
             elif event == "flow_update_completed":
-                status_update_callback(
-                    f"All steps in the plan have been applied successfully! 🎉"
-                )
-                status_update_callback(f"Generating the final program ...")
+                status_update_callback(f"All steps have been applied successfully!🎉")
+                status_update_callback(f"Working on the final touches.")
+            elif event == "global_variables_updated":
+                status_update_callback(f"Updating Entries!")
+            elif event == "config_vars_updated":
+                status_update_callback(f"Updating Entries!")
+            elif event == "dsl_updated_successfully":
+                status_update_callback(f"Program update completed!")
 
-        status_update_callback(f"Generating a plan to update the program ...")
+        status_update_callback(f"Thanks for your input! 🚀")
+        status_update_callback(f"Preparing a plan to update the program! 📝")
         old_nlr = generate_nlr(dsl)
         nl2dsl = NL2DSL(
             utterance=text,
@@ -203,6 +209,7 @@ class JBEngine(PwRStudioEngine):
 
         nlr = generate_nlr(nl2dsl.dsl)
         code = CodeGen(json_data=nl2dsl.dsl).generate_fsm_code()
+        status_update_callback(f"Preparing feedback ...")
         feedback = generate_feedback(
             chat_history_strings
             + [
@@ -247,6 +254,7 @@ class JBEngine(PwRStudioEngine):
         await self._progress(
             Response(type="output", message=feedback, project=self._project)
         )
+        status_update_callback(f"Program update completed! 🎉")
 
     async def _get_output(self, user_input, **kwargs):
         # to remove trailing new lines

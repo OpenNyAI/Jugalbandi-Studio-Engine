@@ -13,6 +13,22 @@ This repo provides an integration on how to build and deploy the Jugalbandi Apps
    2. [Jugalbandi Manager](https://github.com/OpenNyAI/Jugalbandi-Manager/)
    3. [PwR-Studio](https://github.com/microsoft/PwR-Studio)
    4. [PwR-NL2DSL](https://github.com/microsoft/PwR-NL2DSL/)
-   5. 
 2. Keep all the repo under same folder level.
-3. 
+3. Spawn a terminal inside Jugalbandi Studio Engine repo.
+4. Go inside the `studio-and-manager` directory. 
+```bash 
+$ cd studio-and-manager
+```
+5. Run the follwoing command to setup kafka and postgres
+```bash
+$ bash scripts/run.sh kafka postgres
+```
+6. Wait for topics to be created and database to be initialised.
+7. Spawn a new terminal inside Jugalbandi Studio Engine repo.
+8. Run the following command.
+```bash
+$ cd studio-and-manager
+$ bash scripts/run.sh server engine studio api channel language flow frontend
+```
+9. Go to http://localhost:4173 to access Jugalbandi Studio.
+10. Go to http://localhost:4179 to access Jugalbandi Manager.
