@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import logging
 import importlib
 import importlib.util
 import os
@@ -44,9 +45,11 @@ from pydantic import BaseModel, Field
 import re
 
 credentials = {
-    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_API_ENDPOINT', ''),
+    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_ENDPOINT', ''),
     'AZURE_OPENAI_API_KEY': os.getenv('AZURE_OPENAI_API_KEY', ''),
     'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION', ''),
+    'FAST_MODEL': os.getenv('FAST_MODEL', ''),
+    'SLOW_MODEL': os.getenv('SLOW_MODEL', ''),
     'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
 }
 
@@ -269,7 +272,7 @@ class JBEngine(PwRStudioEngine):
                 msg_queue.append(x.message.image.caption)
             if x.message.message_type == MessageType.BUTTON:
                 msg_queue.append(x.message.button.header)
-                msg_queue.append(x.message.button.text)
+                msg_queue.append(x.message.button.body)
                 msg_queue.append(x.message.button.footer)
                 options = {
                     "type": "dropdown",
@@ -278,7 +281,7 @@ class JBEngine(PwRStudioEngine):
                 msg_queue.append(f'{json.dumps(options)}\xa1')
             if x.message.message_type == MessageType.OPTION_LIST:
                 msg_queue.append(x.message.option_list.header)
-                msg_queue.append(x.message.option_list.text)
+                msg_queue.append(x.message.option_list.body)
                 msg_queue.append(x.message.option_list.footer)
                 options = {
                     "type": "dropdown",
@@ -300,7 +303,7 @@ class JBEngine(PwRStudioEngine):
             else:
                 return [None, ]
 
-        if user_input == "_reset_chat_" or user_input == "/start" or user_input == "hi":
+        if user_input == "_reset_chat_" or user_input == "/start" or user_input.lower() == "hi":
             # restart the bot
             await self._progress(
                 Response(type="thought", message="Starting new bot instance", project=self._project)
@@ -351,8 +354,9 @@ class JBEngine(PwRStudioEngine):
             if state and state["main"]["state"] == "zero":
                 is_bot_end = True
 
-        except:
-            print(traceback.format_exc())
+        except Exception as e:
+            logging.error(e)
+            logging.error(traceback.format_exc())
             await self._progress(
                 Response(type="thought", message="Error in processing dsl", project=self._project)
             )

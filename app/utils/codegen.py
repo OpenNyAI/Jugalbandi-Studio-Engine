@@ -241,9 +241,6 @@ class CodeGen:
                     )
 
                 validation = self.variables[task["write_variable"]]["validation"]
-                should_validate = (
-                    task["should_validate"] if "should_validate" in task else True
-                )
 
                 self.validation_methods.append(
                     (method_name, task["write_variable"], validation)
@@ -262,7 +259,6 @@ class CodeGen:
                         "type": "logic",
                         "state": task,
                         "validation_expression": validation,
-                        "should_validate": should_validate,
                     }
                 )
             elif task["task_type"] == "print":
