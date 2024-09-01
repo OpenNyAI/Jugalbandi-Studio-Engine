@@ -8,26 +8,25 @@ Jugalbandi Manager is for hosting the Jugalbandi Apps build on studio.
 This repo provides an integration on how to build and deploy the Jugalbandi Apps on the Jugalbandi Manager. We would run both Studio and Manager together.
 
 ## Setup
-1. Clone these 4 repo:
+1. Clone these 4 repo and ensure they are the same depth:
    1. [Jugalbandi Studio Engine](https://github.com/OpenNyAI/Jugalbandi-Studio-Engine/)
    2. [Jugalbandi Manager](https://github.com/OpenNyAI/Jugalbandi-Manager/)
    3. [PwR-Studio](https://github.com/microsoft/PwR-Studio)
    4. [PwR-NL2DSL](https://github.com/microsoft/PwR-NL2DSL/)
-2. Keep all the repo under same folder level.
-3. Spawn a terminal inside Jugalbandi Studio Engine repo.
-4. Go inside the `studio-and-manager` directory. 
+2. Ensure you have [poetry installed](https://python-poetry.org/docs/#installing-with-pipx)
+```bash
+poetry --version
+```
+3. Ensure you have the right values for `.env-dev`
+```bash
+cp .env-dev.template .env-dev
+```
+5. Go inside the `studio-and-manager` directory. 
 ```bash 
 $ cd studio-and-manager
 ```
-5. Run the follwoing command to setup kafka and postgres
-```bash
-$ bash scripts/run.sh kafka postgres
-```
-6. Wait for topics to be created and database to be initialised.
-7. Spawn a new terminal inside Jugalbandi Studio Engine repo.
 8. Run the following command.
 ```bash
-$ cd studio-and-manager
 $ bash scripts/run.sh server engine studio api channel language flow frontend
 ```
 9. Go to http://localhost:4173 to access Jugalbandi Studio.
