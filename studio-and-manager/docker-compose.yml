@@ -20,8 +20,10 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - WA_API_HOST=${WA_API_HOST}
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
   language:
     image: opennyaiin/jugalbandi-manager:language-latest
     environment:
@@ -52,8 +54,10 @@ services:
       - AZURE_STORAGE_CONTAINER=${AZURE_STORAGE_CONTAINER}
       - PUBLIC_URL_PREFIX=${PUBLIC_URL_PREFIX}
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
     volumes:
       - ./media:/mnt/jb_files
   flow:
@@ -79,8 +83,10 @@ services:
       - AZURE_STORAGE_CONTAINER=${AZURE_STORAGE_CONTAINER}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
     volumes:
       - ./media:/mnt/jb_files
   channel:
@@ -108,8 +114,10 @@ services:
       - PUBLIC_URL_PREFIX=${PUBLIC_URL_PREFIX}
       - WA_API_HOST=${WA_API_HOST}
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
     volumes:
       - ./media:/mnt/jb_files
 
@@ -155,8 +163,10 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       # Add all Azure OpenAI keys
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
   studio:
     build:
       context: ../../PwR-Studio
@@ -192,7 +202,10 @@ services:
       - FAST_MODEL=${FAST_MODEL}
       - SLOW_MODEL=${SLOW_MODEL}
     depends_on:
-      - kafka
+      kafka:
+          condition: service_healthy
+      postgres:
+          condition: service_healthy
 
   # Postgres and Kafka
   postgres:
@@ -207,6 +220,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./jbmanager_dump.sql:/docker-entrypoint-initdb.d/jbmanager_dump.sql
       - ./jbstudio_dump.sql:/docker-entrypoint-initdb.d/jbstudio_dump.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
 
   postgres-adminer:
     image: adminer
@@ -241,6 +260,11 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 15s
+      retries: 5
 
 volumes:
   kafka_data:
