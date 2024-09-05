@@ -221,7 +221,7 @@ services:
       - ./jbmanager_dump.sql:/docker-entrypoint-initdb.d/jbmanager_dump.sql
       - ./jbstudio_dump.sql:/docker-entrypoint-initdb.d/jbstudio_dump.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_DATABASE_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -261,7 +261,7 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "grep 'Topics created' /bitnami/kafka/status.txt  > /dev/null 2>&1"]
       interval: 15s
       timeout: 15s
       retries: 5
