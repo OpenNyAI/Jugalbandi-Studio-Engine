@@ -1,0 +1,20 @@
+name: reasoning_engine
+description: |
+    The name of the plugin is reasoning_engine. This plugin calls Reasoning Engine for any given reasoning behaviour and user query, and provides the response of the reasoning engine.
+    
+    The inputs needed are:
+        - QUERY (type:str) : The question for which a reasoned response is required.
+        - SYSTEM_PROMPT (type:str) : The system prompt for the reasoning engine call which makes the engine behave in a certain way.
+        - AZURE_OPENAI_API_KEY (type:str) : An Azure OpenAI API Key to make the call.
+        - AZURE_OPENAI_API_VERSION (type:str) : The version of the Azure OpenAI API to be used.
+        - AZURE_OPENAI_API_ENDPOINT (type:str) : The endpoint of the Azure OpenAI API to be used.
+        - MODEL (type:str) : The model to be used for the call.
+
+    The outputs provided are:
+        - RESPONSE (type:str) : The reasoned response from the engine against the given query and system prompt.
+    
+    Return codes are:
+        - `SUCCESS`: Success - Indicates that the gpt call was successful.
+        - `BAD_REQUEST`: - Indicates that there was an error in the input data.
+        - `UNAUTHORISED`: - Indicates issue in the API key and the gpt call can't be made.
+        - `SERVER_ERROR`: - Indicates that there was an error in the server.
