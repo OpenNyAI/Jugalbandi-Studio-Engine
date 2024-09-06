@@ -55,7 +55,7 @@ class reasoning_engine(AbstractFSM):
         self.return_status_values = self.return_status_values.SUCCESS
         super().__init__(send_message)
 
-    def on_enter_send_payment_request(self):
+    def on_enter_call_llm(self):
         self.status = Status.WAIT_FOR_ME
         llm_query = getattr(self.variables, "QUERY")
         system_prompt = getattr(self.variables, "SYSTEM_PROMPT")
