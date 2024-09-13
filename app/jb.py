@@ -33,6 +33,7 @@ class Message(BaseModel):
 
 from nl2dsl import NL2DSL
 from .utils.codegen import CodeGen
+from .utils.test_codegen import TestCodegen
 from .utils.nlr_gen import generate_nlr
 from .utils.feedback_gen import generate_feedback
 from .utils.mermaid_chart import generate_mermaid_chart
@@ -265,10 +266,15 @@ class JBEngine(PwRStudioEngine):
 
         msg_queue = []
         def fsm_callback(x: FSMOutput):
+            if hasattr(x, "name"):
+                plugin_options = x.model_dump()
+                plugin_options['type'] = "plugin"
+                msg_queue.append(f'{json.dumps(plugin_options)}\xa1')
+                return
             if x.message.message_type == MessageType.TEXT:
                 msg_queue.append(x.message.text.body)
             if x.message.message_type == MessageType.IMAGE:
-                msg_queue.append(x.message.image.media_url)
+                msg_queue.append(x.message.image.url)
                 msg_queue.append(x.message.image.caption)
             if x.message.message_type == MessageType.BUTTON:
                 msg_queue.append(x.message.button.header)
@@ -314,7 +320,7 @@ class JBEngine(PwRStudioEngine):
         is_bot_end = False
         try:
             dsl_obj = json.loads(self._project.representations["dsl"].text)
-            test_code = self._project.representations["code"].text
+            test_code = TestCodegen(json_data=dsl_obj).generate_fsm_code()
 
             # load class via exec
             #gen_class_dict = {}
@@ -347,6 +353,8 @@ class JBEngine(PwRStudioEngine):
 
             input_parts = get_input_parts(user_input)
             for inp in input_parts:
+                if isinstance(inp, dict):
+                    inp = json.dumps(inp)
                 state = tclz.run_machine(fsm_callback, inp, None, credentials, state)
 
             self._project.representations["fsm_state"].text = json.dumps(state)
