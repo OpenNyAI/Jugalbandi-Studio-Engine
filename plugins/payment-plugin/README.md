@@ -1,0 +1,1 @@
+Please refer to jb-payment for the current version of payment plugin
