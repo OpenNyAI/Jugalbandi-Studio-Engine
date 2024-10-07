@@ -19,3 +19,4 @@ kafka-topics.sh --create --bootstrap-server localhost:9092 --topic $KAFKA_INDEXE
 kafka-topics.sh --create --bootstrap-server localhost:9092 --topic $KAFKA_ENGINE_TOPIC --if-not-exists
 
 kafka-topics.sh --bootstrap-server localhost:9092 --list
+echo "Topics created" > /bitnami/kafka/status.txt

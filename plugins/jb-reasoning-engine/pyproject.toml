@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "jb-reasoning-engine"
+version = "0.1.0"
+description = ""
+authors = ["Shrey Pandey <shreypandey1509@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+jb-manager-bot = "^0.2.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

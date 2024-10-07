@@ -444,7 +444,7 @@ class CodeGen:
         for task in self.json_data["dsl"]:
             if task["task_type"] == "plugin":
                 plugin_names.add(task["plugin"]["name"])
-                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, {task["plugin"]["name"]}ReturnStatus
+                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, ReturnStatus as {task["plugin"]["name"]}ReturnStatus
 """
 
     def generate_imports(self):
