@@ -1,1 +1,1 @@
-from .payment import payment, paymentReturnStatus
+from .payment import payment, ReturnStatus

@@ -36,14 +36,14 @@ def request_payment(amount: int, client_id: str, client_secret: str, reference_i
     return payment_url
 
 
-class paymentReturnStatus(Enum):
+class ReturnStatus(Enum):
     SUCCESS = "success"
     CANCELLED_BY_USER = "cancelled_by_user"
     EXPIRED = "expired"
     SERVER_ERROR = "server_error"
 
 
-class PaymentPluginVariables(Variables):
+class PluginVariables(Variables):
     MOBILE_NUMBER: Optional[str] = None
     NAME: Optional[str] = None
     CLIENT_ID: Optional[str] = None
@@ -95,8 +95,8 @@ class payment(AbstractFSM):
     ]
     conditions = {"is_payment_success"}
     output_variables = {"TXN_ID"}
-    variable_names = PaymentPluginVariables
-    return_status_values = paymentReturnStatus
+    variable_names = PluginVariables
+    return_status_values = ReturnStatus
 
     def __init__(self, send_message: callable, credentials: Dict[str, Any] = None):
         if credentials is None:

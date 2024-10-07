@@ -444,7 +444,7 @@ import re
         for task in self.json_data["dsl"]:
             if task["task_type"] == "plugin":
                 plugin_names.add(task["plugin"]["name"])
-                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, {task["plugin"]["name"]}ReturnStatus
+                self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, ReturnStatus as {task["plugin"]["name"]}ReturnStatus
 """
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]

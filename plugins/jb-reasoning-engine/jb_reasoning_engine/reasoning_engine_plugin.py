@@ -8,14 +8,14 @@ from jb_manager_bot.data_models import (
 from jb_manager_bot.parsers.utils import LLMManager
 
 
-class reasoning_engineReturnStatus(Enum):
+class ReturnStatus(Enum):
     SUCCESS = "success"
     BAD_REQUEST = "bad_request"
     UNAUTHORISED = "unauthorised"
     SERVER_ERROR = "server_error"
 
 
-class reasoning_enginePluginVariables(Variables):
+class PluginVariables(Variables):
     QUERY: Optional[str] = None
     SYSTEM_PROMPT: Optional[str] = None
     AZURE_OPENAI_API_KEY: Optional[str] = None
@@ -42,8 +42,8 @@ class reasoning_engine(AbstractFSM):
     ]
     conditions = set()
     output_variables = {"RESPONSE"}
-    variable_names = reasoning_enginePluginVariables
-    return_status_values = reasoning_engineReturnStatus
+    variable_names = PluginVariables
+    return_status_values = ReturnStatus
 
     def __init__(self, send_message: callable, credentials: Dict[str, Any] = None):
         if credentials is None:
