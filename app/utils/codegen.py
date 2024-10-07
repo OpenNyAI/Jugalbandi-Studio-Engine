@@ -109,7 +109,7 @@ class CodeGen:
             plugin="{plugin["name"]}",
             input_variables={plugin["inputs"]},
             output_variables={plugin["outputs"]},
-            message="{message}"        
+            message={f'"{message}"' if message else None}
         )
     """
         return method_code
@@ -130,9 +130,12 @@ class CodeGen:
 
         # correct source of formatted strings
         msg_nobrace = message.replace("{{", "~~")[::-1].replace("}}", "~~")[::-1]
-        brace_loc = [m.span()[0] for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
-        for pos in brace_loc[::-1]:
-            message = message[: pos + 1] + "self.variables." + message[pos + 1 :]
+        brace_ranges = [m.span() for m in re.finditer(r"\{[^{}]+\}", msg_nobrace)]
+        for pos_s, pos_e in brace_ranges[::-1]:
+            if message[pos_s + 1 : pos_e - 1] in self.variables:
+                message = (
+                    message[: pos_s + 1] + "self.variables." + message[pos_s + 1 :]
+                )
 
         if options:
             method_code = f"""
@@ -171,7 +174,7 @@ class CodeGen:
             message="{task['message']}",
             write_var="{task['write_variable']}",
             options={options},
-            validation="{validation_expression}",
+            validation="{validation_expression}"
         )
     """
         return method_code
@@ -191,6 +194,7 @@ class CodeGen:
                     return node
 
         correct_expr = ast.unparse(VarTweaker().visit(ast.parse(validation_expression)))
+
         # if correct expression has single = then it is assignment
         # else return the expression as it is
         if "=" in correct_expr:
@@ -213,251 +217,287 @@ class CodeGen:
     """
         return method_code
 
-    def generate_fsm_code(self):
+    def generate_start_state(self):
+        self.states.append("zero")
 
-        for task in self.json_data["dsl"]:
-            # self.states Additions
-            if task["task_type"] == "start":
-                self.states.append("zero")
-            elif task["task_type"] == "end":
-                self.states.append(task["name"])
-            elif task["task_type"] == "input":
-                display_state = f"{task['name']}_display"
-                input_state = f"{task['name']}_input"
-                logic_state = f"{task['name']}_logic"
+    def generate_end_state(self, task):
+        self.states.append(task["name"])
 
-                self.states.extend([display_state, input_state, logic_state])
+    def generate_input_states(self, task):
+        display_state = f"{task['name']}_display"
+        input_state = f"{task['name']}_input"
+        logic_state = f"{task['name']}_logic"
 
-                method_name = f"is_valid_{task['name']}"
-                validation = None
+        self.states.extend([display_state, input_state, logic_state])
 
-                if task["write_variable"] not in self.variables:
-                    raise ValueError(
-                        f"Variable {task['write_variable']} not found in variables"
-                    )
+        method_name = f"is_valid_{task['name']}"
+        validation = None
 
-                validation = self.variables[task["write_variable"]]["validation"]
+        if task["write_variable"] not in self.variables:
+            raise ValueError(
+                f"Variable {task['write_variable']} not found in variables"
+            )
 
-                self.validation_methods.append(
-                    (method_name, task["write_variable"], validation)
+        validation = self.variables[task["write_variable"]]["validation"]
+
+        self.validation_methods.append(
+            (method_name, task["write_variable"], validation)
+        )
+
+        self.on_enter_methods.append(
+            {
+                "type": "display",
+                "state": task,
+                "name": display_state,
+            }
+        )
+        self.on_enter_methods.append({"type": "input", "state": task})
+        self.on_enter_methods.append(
+            {
+                "type": "logic",
+                "state": task,
+                "validation_expression": validation,
+            }
+        )
+
+    def generate_print_state(self, task):
+        display_state = task["name"]
+        self.states.append(display_state)
+        self.on_enter_methods.append(
+            {
+                "type": "display",
+                "state": task,
+                "name": display_state,
+            }
+        )
+
+    def generate_condition_state(self, task):
+        condition_state = task["name"]
+        self.states.append(condition_state)
+        self.on_enter_methods.append(
+            {
+                "type": "condition",
+                "state": task,
+            }
+        )
+        read_variables = task["read_variables"]
+        state_transitions = task["conditions"]
+        for idx, transition in enumerate(state_transitions):
+            for variable in read_variables:
+                if variable in transition["condition"]:
+                    variable_name = variable
+            self.validation_methods.append(
+                (
+                    f"is_valid_{condition_state}_{idx}",
+                    variable_name,
+                    transition["condition"],
                 )
+            )
 
-                self.on_enter_methods.append(
-                    {
-                        "type": "display",
-                        "state": task,
-                        "name": display_state,
-                    }
-                )
-                self.on_enter_methods.append({"type": "input", "state": task})
-                self.on_enter_methods.append(
-                    {
-                        "type": "logic",
-                        "state": task,
-                        "validation_expression": validation,
-                    }
-                )
-            elif task["task_type"] == "print":
-                display_state = task["name"]
-                self.states.append(display_state)
-                self.on_enter_methods.append(
-                    {
-                        "type": "display",
-                        "state": task,
-                        "name": display_state,
-                    }
-                )
-            elif task["task_type"] == "condition":
-                condition_state = task["name"]
-                self.states.append(condition_state)
-                self.on_enter_methods.append(
-                    {
-                        "type": "condition",
-                        "state": task,
-                    }
-                )
-                read_variables = task["read_variables"]
-                state_transitions = task["conditions"]
-                for idx, transition in enumerate(state_transitions):
-                    for variable in read_variables:
-                        if variable in transition["condition"]:
-                            variable_name = variable
-                    self.validation_methods.append(
-                        (
-                            f"is_valid_{condition_state}_{idx}",
-                            variable_name,
-                            transition["condition"],
-                        )
-                    )
-            elif task["task_type"] == "plugin":
-                plugin_state = task["name"]
-                plugin_name = task["plugin"]["name"]
-                self.states.append(plugin_state)
-                state_transitions = task["transitions"]
-                for idx, transition in enumerate(state_transitions):
+    def generate_plugin_state(self, task):
+        plugin_state = task["name"]
+        plugin_name = task["plugin"]["name"]
+        self.states.append(plugin_state)
+        state_transitions = task["transitions"]
+        for idx, transition in enumerate(state_transitions):
+            self.plugin_error_methods.append(
+                {
+                    "name": f"is_{plugin_state}_{transition['code']}",
+                    "condition": transition["code"],
+                    "plugin_name": plugin_name,
+                }
+            )
+        self.on_enter_methods.append(
+            {
+                "type": "plugin",
+                "state": task,
+            }
+        )
 
-                    self.plugin_error_methods.append(
-                        {
-                            "name": f"is_{plugin_state}_{transition['code']}",
-                            "condition": transition["code"],
-                            "plugin_name": plugin_name
-                        }
-                    )
+    def generate_operation_state(self, task):
+        self.states.append(task["name"])
+        expression = task["operation"]
 
-                self.on_enter_methods.append(
-                    {
-                        "type": "plugin",
-                        "state": task,
-                    }
-                )
-            elif task["task_type"] == "operation":
-                self.states.append(task["name"])
-                expression = task["operation"]
+        self.on_enter_methods.append(
+            {
+                "type": "operation",
+                "state": task,
+                "operation": expression,
+            }
+        )
 
-                self.on_enter_methods.append(
-                    {
-                        "type": "operation",
-                        "state": task,
-                        "operation": expression,
-                    }
-                )
+    def generate_start_transition(self, task):
+        goto = task["goto"]
+        if goto is None:
+            return
+        if goto and goto not in self.states and goto != "end":
+            goto = f"{goto}_display"
+        self.transitions.append(
+            {
+                "source": (task["name"] if task["task_type"] == "end" else "zero"),
+                "dest": goto,
+                "trigger": "next",
+            }
+        )
 
-        for task in self.json_data["dsl"]:
-            # self.transitions Additions
-            if task["task_type"] == "start" or task["task_type"] == "end":
-                goto = task["goto"]
-                if goto is None:
-                    continue
-                if goto and goto not in self.states and goto != "end":
-                    goto = f"{goto}_display"
-                self.transitions.append(
-                    {
-                        "source": (
-                            task["name"] if task["task_type"] == "end" else "zero"
-                        ),
-                        "dest": goto,
-                        "trigger": "next",
-                    }
-                )
-            elif task["task_type"] == "print":
-                goto = task["goto"]
-                if goto is None:
-                    goto = "end"
-                if goto and goto not in self.states and goto != "end":
-                    goto = f"{goto}_display"
+    def generate_print_transition(self, task):
+        goto = task["goto"]
+        if goto is None:
+            goto = "end"
+        if goto and goto not in self.states and goto != "end":
+            goto = f"{goto}_display"
 
-                self.transitions.append(
-                    {
-                        "source": task["name"],
-                        "dest": goto,
-                        "trigger": "next",
-                    }
-                )
-            elif task["task_type"] == "input":
-                display_state = f"{task['name']}_display"
-                input_state = f"{task['name']}_input"
-                logic_state = f"{task['name']}_logic"
-                goto = task["goto"]
-                error_goto = task["error_goto"]
+        self.transitions.append(
+            {
+                "source": task["name"],
+                "dest": goto,
+                "trigger": "next",
+            }
+        )
 
-                self.transitions.extend(
-                    [
-                        {
-                            "source": display_state,
-                            "dest": input_state,
-                            "trigger": "next",
-                        },
-                        {"source": input_state, "dest": logic_state, "trigger": "next"},
-                    ]
-                )
-                if goto is None:
-                    goto = "end"
-                if goto and goto not in self.states and goto != "end":
-                    goto = f"{goto}_display"
-                if error_goto is None:
-                    error_goto = "end"
-                if error_goto and error_goto not in self.states and error_goto != "end":
-                    error_goto = f"{error_goto}_display"
+    def generate_input_transition(self, task):
+        display_state = f"{task['name']}_display"
+        input_state = f"{task['name']}_input"
+        logic_state = f"{task['name']}_logic"
+        goto = task["goto"]
+        error_goto = task["error_goto"]
 
-                self.transitions.extend(
-                    [
-                        {
-                            "source": logic_state,
-                            "dest": goto,
-                            "trigger": "next",
-                            "conditions": f"is_valid_{task['name']}",
-                        },
-                        {"source": logic_state, "dest": error_goto, "trigger": "next"},
-                    ]
-                )
-            elif task["task_type"] == "condition":
-                condition_state = task["name"]
-                state_transitions = task["conditions"]
-                for idx, transition in enumerate(state_transitions):
-                    if transition["goto"] is None:
-                        transition["goto"] = "end"
-                    if transition["goto"] and transition["goto"] not in self.states:
-                        transition["goto"] = f"{transition['goto']}_display"
-                    self.transitions.append(
-                        {
-                            "source": condition_state,
-                            "dest": transition["goto"],
-                            "trigger": "next",
-                            "conditions": f"is_valid_{condition_state}_{idx}",
-                        }
-                    )
-            elif task["task_type"] == "plugin":
-                plugin_state = task["name"]
-                state_transitions = task["transitions"]
-                for idx, transition in enumerate(state_transitions):
-                    self.transitions.append(
-                        {
-                            "source": plugin_state,
-                            "dest": transition["goto"],
-                            "trigger": "next",
-                            "conditions": f"is_{plugin_state}_{transition['code']}",
-                        }
-                    )
-            elif task["task_type"] == "operation":
-                goto = task["goto"]
-                if goto is None:
-                    goto = "end"
-                if goto and goto not in self.states and goto != "end":
-                    goto = f"{goto}_display"
+        self.transitions.extend(
+            [
+                {
+                    "source": display_state,
+                    "dest": input_state,
+                    "trigger": "next",
+                },
+                {"source": input_state, "dest": logic_state, "trigger": "next"},
+            ]
+        )
+        if goto is None:
+            goto = "end"
+        if goto and goto not in self.states and goto != "end":
+            goto = f"{goto}_display"
 
-                self.transitions.append(
-                    {
-                        "source": task["name"],
-                        "dest": goto,
-                        "trigger": "next",
-                    }
-                )
+        if error_goto is None:
+            error_goto = "end"
+        if error_goto and error_goto not in self.states and error_goto != "end":
+            error_goto = f"{error_goto}_display"
 
-        self.code = f"""
-from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
-from pydantic import BaseModel, Field
-from jb_manager_bot import AbstractFSM
-from jb_manager_bot.data_models import FSMOutput
-import re
-"""
+        self.transitions.extend(
+            [
+                {
+                    "source": logic_state,
+                    "dest": goto,
+                    "trigger": "next",
+                    "conditions": f"is_valid_{task['name']}",
+                },
+                {"source": logic_state, "dest": error_goto, "trigger": "next"},
+            ]
+        )
+
+    def generae_condition_transition(self, task):
+        condition_state = task["name"]
+        state_transitions = task["conditions"]
+        for idx, transition in enumerate(state_transitions):
+            if transition["goto"] is None:
+                transition["goto"] = "end"
+            if transition["goto"] and transition["goto"] not in self.states:
+                transition["goto"] = f"{transition['goto']}_display"
+            self.transitions.append(
+                {
+                    "source": condition_state,
+                    "dest": transition["goto"],
+                    "trigger": "next",
+                    "conditions": f"is_valid_{condition_state}_{idx}",
+                }
+            )
+
+    def generate_plugin_transition(self, task):
+        plugin_state = task["name"]
+        state_transitions = task["transitions"]
+        for idx, transition in enumerate(state_transitions):
+            self.transitions.append(
+                {
+                    "source": plugin_state,
+                    "dest": transition["goto"],
+                    "trigger": "next",
+                    "conditions": f"is_{plugin_state}_{transition['code']}",
+                }
+            )
+
+    def generate_operation_transition(self, task):
+        goto = task["goto"]
+        if goto is None:
+            goto = "end"
+        if goto and goto not in self.states and goto != "end":
+            goto = f"{goto}_display"
+
+        self.transitions.append(
+            {
+                "source": task["name"],
+                "dest": goto,
+                "trigger": "next",
+            }
+        )
+
+    def generate_plugin_imports(self):
         plugin_names = set()
         for task in self.json_data["dsl"]:
             if task["task_type"] == "plugin":
                 plugin_names.add(task["plugin"]["name"])
                 self.code += f"""from jb_{task["plugin"]["name"]} import {task["plugin"]["name"]}, {task["plugin"]["name"]}ReturnStatus
 """
+
+    def generate_imports(self):
+        self.code = f"""
+from typing import Dict, Any, Type, List, Tuple, Set, Optional, Literal
+from pydantic import BaseModel, Field
+from jb_manager_bot import AbstractFSM
+from jb_manager_bot.data_models import FSMOutput
+import re
+import json
+"""
+        self.generate_plugin_imports()
+
+    def generate_variable_class(self):
         pydantic_code = self.generate_pydantic_class(
             self.fsm_class_name, self.json_data["variables"]
         )
         pydantic_code = "\n".join(["" + l for l in pydantic_code.split("\n")])
+        self.code += f"""
+{pydantic_code}
+"""
 
+    def get_plugin_init_code(self):
+        plugin_names = set()
+        for task in self.json_data["dsl"]:
+            if task["task_type"] == "plugin":
+                plugin_names.add(task["plugin"]["name"])
         plugin_init_code = ""
         for plugin in plugin_names:
             plugin_init_code += f"""
             "{plugin}": {plugin}(send_message=send_message),
         """
+        return plugin_init_code
+
+    def generate_validation_methods(self):
+        for method in self.validation_methods:
+            self.code += f"""
+    def {method[0]}(self):
+        variable_name = "{method[1]}"
+        validation = lambda x: {method[2].replace(method[1], "x")}
+        return self._validate_method(variable_name, validation)
+"""
+
+    def generate_plugin_error_methods(self):
+        for method in self.plugin_error_methods:
+            self.code += f"""
+    def {method["name"]}(self):
+        return self._plugin_error_code_validation({method["plugin_name"]}ReturnStatus.{method["condition"]})
+"""
+
+    def generate_class_scaffold(self):
+        plugin_init_code = self.get_plugin_init_code()
         self.code += f"""
-{pydantic_code}
 
 class {self.fsm_class_name}(AbstractFSM):
     states = {self.states}
@@ -483,6 +523,44 @@ class {self.fsm_class_name}(AbstractFSM):
         self.variables = self.variable_names()
         super().__init__(send_message=send_message)
     """
+
+    def generate_fsm_code(self):
+
+        for task in self.json_data["dsl"]:
+            # self.states Additions
+            if task["task_type"] == "start":
+                self.generate_start_state()
+            elif task["task_type"] == "end":
+                self.generate_end_state(task)
+            elif task["task_type"] == "input":
+                self.generate_input_states(task)
+            elif task["task_type"] == "print":
+                self.generate_print_state(task)
+            elif task["task_type"] == "condition":
+                self.generate_condition_state(task)
+            elif task["task_type"] == "plugin":
+                self.generate_plugin_state(task)
+            elif task["task_type"] == "operation":
+                self.generate_operation_state(task)
+
+        for task in self.json_data["dsl"]:
+            # self.transitions Additions
+            if task["task_type"] == "start" or task["task_type"] == "end":
+                self.generate_start_transition(task)
+            elif task["task_type"] == "print":
+                self.generate_print_transition(task)
+            elif task["task_type"] == "input":
+                self.generate_input_transition(task)
+            elif task["task_type"] == "condition":
+                self.generae_condition_transition(task)
+            elif task["task_type"] == "plugin":
+                self.generate_plugin_transition(task)
+            elif task["task_type"] == "operation":
+                self.generate_operation_transition(task)
+
+        self.generate_imports()
+        self.generate_variable_class()
+        self.generate_class_scaffold()
         # code+="""
         # def on_enter_select_language(self):
         #     self.status = Status.WAIT_FOR_ME
@@ -520,18 +598,6 @@ class {self.fsm_class_name}(AbstractFSM):
                     method["state"], method["operation"]
                 )
 
-        for method in self.validation_methods:
-            self.code += f"""
-    def {method[0]}(self):
-        variable_name = "{method[1]}"
-        validation = lambda x: {method[2].replace(method[1], "x")}
-        return self._validate_method(variable_name, validation)
-    """
-
-        for method in self.plugin_error_methods:
-            self.code += f"""
-    def {method["name"]}(self):
-        return self._plugin_error_code_validation({method["plugin_name"]}ReturnStatus.{method["condition"]})
-        """
+        self.generate_validation_methods()
+        self.generate_plugin_error_methods()
         return self.code
-
