@@ -514,8 +514,8 @@ class {self.fsm_class_name}(AbstractFSM):
         self.credentials = {{}}
 
         for variable in {json.dumps(self.json_data["config_vars"])}:
-            if not credentials.get(variable["name"]):
-                raise ValueError(f"Missing credential: {{variable['name']}}")
+            # if not credentials.get(variable["name"]):
+            #     raise ValueError(f"Missing credential: {{variable['name']}}")
             self.credentials[variable["name"]] = credentials.get(variable["name"])
         self.plugins: Dict[str, AbstractFSM] = {{
             {plugin_init_code}

@@ -18,9 +18,11 @@ class ReturnStatus(Enum):
 class PluginVariables(Variables):
     QUERY: Optional[str] = None
     SYSTEM_PROMPT: Optional[str] = None
-    AZURE_OPENAI_API_KEY: Optional[str] = None
-    AZURE_OPENAI_API_VERSION: Optional[str] = None
-    AZURE_OPENAI_API_ENDPOINT: Optional[float] = None
+    OPENAI_API_TYPE: Optional[str] = None
+    OPENAI_API_ENDPOINT: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_API_VERSION: Optional[str] = None
+    AZURE_CREDENTIAL_SCOPE: Optional[str] = None
     MODEL: Optional[str] = None
     RESPONSE: Optional[str] = None
 
@@ -59,9 +61,11 @@ class reasoning_engine(AbstractFSM):
         self.status = Status.WAIT_FOR_ME
         llm_query = getattr(self.variables, "QUERY")
         system_prompt = getattr(self.variables, "SYSTEM_PROMPT")
-        azure_openai_api_key = getattr(self.variables, "AZURE_OPENAI_API_KEY")
-        azure_openai_api_version = getattr(self.variables, "AZURE_OPENAI_API_VERSION")
-        azure_openai_api_endpoint = getattr(self.variables, "AZURE_OPENAI_API_ENDPOINT")
+        openai_api_type = getattr(self.variables, "OPENAI_API_TYPE")
+        openai_api_key = getattr(self.variables, "OPENAI_API_KEY")
+        openai_api_version = getattr(self.variables, "OPENAI_API_VERSION")
+        openai_api_endpoint = getattr(self.variables, "OPENAI_API_ENDPOINT")
+        azure_credential_scope = getattr(self.variables, "AZURE_CREDENTIAL_SCOPE")
         model = getattr(self.variables, "MODEL")
 
         llm_response = LLMManager.llm(
@@ -69,10 +73,12 @@ class reasoning_engine(AbstractFSM):
                 LLMManager.sm(system_prompt),
                 LLMManager.um(llm_query),
             ],
-            azure_openai_api_key=azure_openai_api_key,
-            azure_openai_api_version=azure_openai_api_version,
-            azure_openai_api_endpoint=azure_openai_api_endpoint,
             model=model,
+            openai_api_type=openai_api_type,
+            openai_api_key=openai_api_key,
+            openai_api_version=openai_api_version,
+            openai_api_endpoint=openai_api_endpoint,
+            azure_credential_scope=azure_credential_scope,
         )
 
         setattr(self.variables, "RESPONSE", llm_response)
