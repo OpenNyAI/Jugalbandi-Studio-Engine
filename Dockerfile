@@ -17,6 +17,21 @@ RUN poetry install && rm -rf $POETRY_CACHE_DIR
 
 
 FROM mcr.microsoft.com/mirror/docker/library/python:3.11-slim as runtime
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    apt-transport-https \
+    ca-certificates \
+    lsb-release \
+    gpg \
+    gnupg2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
+    mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list && \
+    apt-get update && apt-get install -y azure-cli && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
