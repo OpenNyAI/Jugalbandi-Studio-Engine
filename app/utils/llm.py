@@ -2,18 +2,29 @@ import json
 import os
 from openai import OpenAI, AzureOpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
+from azure.identity import AzureCliCredential, get_bearer_token_provider
 from termcolor import colored
 
 
 @retry(wait=wait_random_exponential(multiplier=1, max=40), stop=stop_after_attempt(10))
 def llm(messages, **kwargs):
-    if os.getenv("AZURE_OPENAI_API_KEY"):
-        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        azure_key = os.getenv("AZURE_OPENAI_API_KEY")
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-        client = AzureOpenAI(
-            azure_endpoint=azure_endpoint, api_key=azure_key, api_version=api_version
-        )
+    if os.getenv("OPENAI_API_TYPE") == "custom":
+        api_endpoint = os.getenv("OPENAI_API_ENDPOINT")
+        api_version = os.getenv("OPENAI_API_VERSION")
+        if api_key := os.getenv("OPENAI_API_KEY", None):
+            client = AzureOpenAI(
+                azure_endpoint=api_endpoint,
+                api_key=api_key,
+                api_version=api_version,
+            )
+        else:
+            scope = os.getenv("AZURE_CREDENTIAL_SCOPE")
+            credential = get_bearer_token_provider(AzureCliCredential(), scope)
+            client = AzureOpenAI(
+                azure_endpoint=api_endpoint,
+                azure_ad_token_provider=credential,
+                api_version=api_version,
+            )
     else:
         client = OpenAI()
 
