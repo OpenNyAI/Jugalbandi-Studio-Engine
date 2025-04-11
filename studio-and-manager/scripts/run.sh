@@ -29,23 +29,14 @@ done
 shift $((OPTIND -1))
 
 # Additional build steps if needed
-cd ../../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}"
-cd -
-
-cd ../../PwR-NL2DSL/ && poetry install && poetry build
-cd -
-cp ../../PwR-NL2DSL/dist/*.whl ./server/dist  
-
-cd ../../PwR-Studio/lib && poetry install && poetry build
-cd -
-cp ../../PwR-Studio/lib/dist/*.whl ./server/dist  
+cd ../../Jugalbandi-Studio-Engine/ && ./build.sh "${JB_ENGINE_VERSION}" && cd -
 
 mkdir -p ../../PwR-Studio/server/dist
-cp ./server/dist/*.whl ../../PwR-Studio/server/dist/
+cp ../dist/*.whl ../../PwR-Studio/server/dist/
 
 # Create necessary directories
 # mkdir -p ./media
-mkdir -p ./server/dist
+# mkdir -p ./server/dist
 
 # Determine host settings based on environment (WSL or Docker)
 if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then

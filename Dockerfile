@@ -50,4 +50,4 @@ COPY . .
 RUN pip install --no-cache-dir ./dist/*.whl
 RUN pip install --no-cache-dir jb-manager-bot
 
-CMD ["python", "-u", "-m", "main"]
+CMD ["bash", "run.sh"]

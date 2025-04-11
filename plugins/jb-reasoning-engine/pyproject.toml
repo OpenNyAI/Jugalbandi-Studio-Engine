@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-jb-manager-bot = "^0.2.3"
+jb-manager-bot = "^0.2.4"
 
 
 [build-system]

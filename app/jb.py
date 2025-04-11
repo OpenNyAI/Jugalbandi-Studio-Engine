@@ -46,12 +46,13 @@ from pydantic import BaseModel, Field
 import re
 
 credentials = {
-    'AZURE_OPENAI_API_ENDPOINT': os.getenv('AZURE_OPENAI_ENDPOINT', ''),
-    'AZURE_OPENAI_API_KEY': os.getenv('AZURE_OPENAI_API_KEY', ''),
-    'AZURE_OPENAI_API_VERSION': os.getenv('AZURE_OPENAI_API_VERSION', ''),
+    'OPENAI_API_TYPE': os.getenv('OPENAI_API_TYPE', ''),
+    'OPENAI_API_ENDPOINT': os.getenv('OPENAI_API_ENDPOINT', ''),
+    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
+    'OPENAI_API_VERSION': os.getenv('OPENAI_API_VERSION', ''),
+    'AZURE_CREDENTIAL_SCOPE': os.getenv('AZURE_CREDENTIAL_SCOPE', ''),
     'FAST_MODEL': os.getenv('FAST_MODEL', ''),
     'SLOW_MODEL': os.getenv('SLOW_MODEL', ''),
-    'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY', ''),
 }
 
 def utcnow():
