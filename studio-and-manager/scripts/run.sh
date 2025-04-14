@@ -35,7 +35,7 @@ mkdir -p ../../PwR-Studio/server/dist
 cp ../dist/*.whl ../../PwR-Studio/server/dist/
 
 # Create necessary directories
-# mkdir -p ./media
+mkdir -p ./media
 # mkdir -p ./server/dist
 
 # Determine host settings based on environment (WSL or Docker)

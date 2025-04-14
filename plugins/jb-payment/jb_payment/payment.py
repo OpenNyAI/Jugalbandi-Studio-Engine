@@ -1,9 +1,8 @@
-import base64
 import json
-import requests
 import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
+import urllib.parse
 from jb_manager_bot import AbstractFSM
 from jb_manager_bot.abstract_fsm import Variables
 from jb_manager_bot.data_models import (
@@ -16,23 +15,12 @@ from jb_manager_bot.data_models import (
 )
 
 
-def generate_auth_header(client_id: str, client_secret: str) -> str:
-    auth_string = base64.b64encode(bytes(f"{client_id}:{client_secret}", "utf-8")).decode("utf-8")
-    return f"Basic {auth_string}"
-
-def request_payment(amount: int, client_id: str, client_secret: str, reference_id: str) -> str:
-    url = "https://api.razorpay.com/v1/payment_links/"
-
-    payload = json.dumps({"amount": amount * 100, "currency": "INR", "reference_id": reference_id})
-    headers = {
-        "Content-type": "application/json",
-        "Authorization": generate_auth_header(client_id=client_id, client_secret=client_secret),
-    }
-
-    response = requests.request("POST", url, headers=headers, data=payload)
-    response = json.loads(response.text)
-    
-    payment_url = response["short_url"]
+def request_payment(
+    mobile: str, reason: str, name: str, amount: int, payment_page_url: str
+) -> str:
+    query_params = {"amount": amount, "reason": reason, "mobile": mobile, "name": name}
+    encoded_params = urllib.parse.urlencode(query_params)
+    payment_url = f"{payment_page_url}?{encoded_params}"
     return payment_url
 
 
@@ -46,8 +34,7 @@ class ReturnStatus(Enum):
 class PluginVariables(Variables):
     MOBILE_NUMBER: Optional[str] = None
     NAME: Optional[str] = None
-    CLIENT_ID: Optional[str] = None
-    CLIENT_SECRET: Optional[str] = None
+    PAYMENT_PAGE_URL: Optional[str] = None
     AMOUNT: Optional[float] = None
     REASON: Optional[str] = None
     TXN_ID: Optional[str] = None
@@ -111,22 +98,32 @@ class payment(AbstractFSM):
     def on_enter_send_payment_request(self):
         self.status = Status.WAIT_FOR_ME
         amount = getattr(self.variables, "AMOUNT")
-        client_id = getattr(self.variables, "CLIENT_ID")
-        client_secret = getattr(self.variables, "CLIENT_SECRET")
+        mobile = getattr(self.variables, "MOBILE_NUMBER")
+        name = getattr(self.variables, "NAME")
+        reason = getattr(self.variables, "REASON")
+        payment_page_url = getattr(self.variables, "PAYMENT_PAGE_URL")
         txn_id = str(uuid.uuid4())
         setattr(self.variables, "TXN_ID", txn_id)
-        reference_id = self.get_reference_id()
-        security_deposit_link = request_payment(amount, client_id=client_id, client_secret=client_secret, reference_id=reference_id)
+        security_deposit_link = request_payment(
+            payment_page_url=payment_page_url,
+            amount=amount,
+            mobile=mobile,
+            reason=reason,
+            name=name,
+        )
         message_head = (
-            f"To confirm your booking, please pay your deposit using the link: {security_deposit_link} \n"
-            f"Security Deposit (held securely) Rs. {amount} \n"
+            "To confirm your booking, "
+            f"please pay your deposit using the link: {security_deposit_link}"
+            "\n"
+            f"Security Deposit (held securely) {amount} INR \n"
             "Please pay the amount within 24 hours"
         )
         self.send_message(
             FSMOutput(
                 intent=FSMIntent.SEND_MESSAGE,
                 message=Message(
-                    message_type=MessageType.TEXT, text=TextMessage(body=message_head)
+                    message_type=MessageType.TEXT, 
+                    text=TextMessage(body=message_head)
                 ),
             )
         )
@@ -135,7 +132,7 @@ class payment(AbstractFSM):
     def on_enter_get_payment_status(self):
         self.status = Status.WAIT_FOR_ME
         payment_callback = json.loads(self.current_callback)
-        payment_status = payment_callback["payload"]["order"]["entity"]["status"]
+        payment_status = payment_callback["status"]
         setattr(
             self.variables,
             "payment_status",
