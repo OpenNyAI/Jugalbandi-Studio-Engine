@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jb-payment"
-version = "0.1.4"
+version = "0.1.5"
 description = ""
 authors = ["Shrey Pandey <shreypandey1509@gmail.com>"]
 readme = "README.md"
