@@ -173,6 +173,8 @@ services:
           condition: service_healthy
       postgres:
           condition: service_healthy
+    networks:
+      - jb-network
   studio:
     build:
       context: ../../PwR-Studio
@@ -190,6 +192,8 @@ services:
       - "4173:4173"
     depends_on:
       - server
+    networks:
+      - jb-network
   engine:
     image: jbengine:${JB_ENGINE_VERSION}
     restart: unless-stopped
@@ -213,6 +217,8 @@ services:
           condition: service_healthy
       postgres:
           condition: service_healthy
+    networks:
+      - jb-network
 
   # Postgres and Kafka
   postgres:
@@ -232,13 +238,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
+    networks:
+      - jb-network
 
-  postgres-adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
+  # postgres-adminer:
+  #   image: adminer
+  #   restart: always
+  #   ports:
+  #     - 8080:8080
   # metabase:
   #   image: metabase/metabase:latest
   #   ports:
@@ -272,9 +279,15 @@ services:
       interval: 15s
       timeout: 15s
       retries: 5
+    networks:
+      - jb-network
 
 volumes:
   kafka_data:
     driver: local
   postgres_data:
     driver: local
+
+networks:
+  jb-network:
+    driver: bridge
