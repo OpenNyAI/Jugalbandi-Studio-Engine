@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default environment file
-env_file=".env-dev"
+env_file=".env"
 JB_ENGINE_VERSION=0.0.1
 
 # Process command-line arguments
