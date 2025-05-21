@@ -38,24 +38,10 @@ cp ../dist/*.whl ../../PwR-Studio/server/dist/
 mkdir -p ./media
 # mkdir -p ./server/dist
 
-# Determine host settings based on environment (WSL or Docker)
-if grep -qi microsoft /proc/version && grep -q WSL2 /proc/version; then
-    echo "Inside PwR Studio Configuration for WSL2"
-    JBHOST=$(hostname -I | awk '{print $1}')
-    export JBHOST
-    export KAFKA_BROKER="${JBHOST}"
-    export POSTGRES_DATABASE_HOST="${JBHOST}"
-    export PWR_SERVER_HOST="http://${JBHOST}:3000"
-    export POSTGRES_DATABASE_HOST="${JBHOST}"
-    echo "Setting hosts by WSL2 IP: ${JBHOST}"
-else
-    export JBHOST="localhost"
-    export KAFKA_BROKER="kafka:9092"
-    export POSTGRES_DATABASE_HOST="postgres"
-    export PWR_SERVER_HOST="http://api:3000"
-    export POSTGRES_DATABASE_HOST="localhost"
-    echo "Setting hosts by docker-compose service names"
-fi
+export JBHOST="localhost"
+export KAFKA_BROKER="kafka:9092"
+export POSTGRES_DATABASE_HOST="postgres"
+export PWR_SERVER_HOST="http://server:3000"
 
 # Set other variables
 export JB_API_SERVER_HOST="http://localhost:8000"
