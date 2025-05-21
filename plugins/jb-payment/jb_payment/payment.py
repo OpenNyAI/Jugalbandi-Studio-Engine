@@ -16,9 +16,20 @@ from jb_manager_bot.data_models import (
 
 
 def request_payment(
-    mobile: str, reason: str, name: str, amount: int, payment_page_url: str
+    mobile: str,
+    reason: str,
+    name: str,
+    amount: int,
+    payment_page_url: str,
+    reference_id: str,
 ) -> str:
-    query_params = {"amount": amount, "reason": reason, "mobile": mobile, "name": name}
+    query_params = {
+        "amount": amount,
+        "reason": reason,
+        "mobile": mobile,
+        "name": name,
+        "reference_id": reference_id,
+    }
     encoded_params = urllib.parse.urlencode(query_params)
     payment_url = f"{payment_page_url}?{encoded_params}"
     return payment_url
@@ -104,12 +115,14 @@ class payment(AbstractFSM):
         payment_page_url = getattr(self.variables, "PAYMENT_PAGE_URL")
         txn_id = str(uuid.uuid4())
         setattr(self.variables, "TXN_ID", txn_id)
+        reference_id = self.get_reference_id()
         security_deposit_link = request_payment(
             payment_page_url=payment_page_url,
             amount=amount,
             mobile=mobile,
             reason=reason,
             name=name,
+            reference_id=reference_id,
         )
         message_head = (
             "To confirm your booking, "
