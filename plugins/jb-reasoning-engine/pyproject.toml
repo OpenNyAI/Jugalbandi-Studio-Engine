@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jb-reasoning-engine"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Shrey Pandey <shreypandey1509@gmail.com>"]
 readme = "README.md"
